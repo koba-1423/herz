@@ -15,13 +15,22 @@
 - SQLAlchemy 2.0 (async) + PostgreSQL + Alembic
 - httpx（外部API連携）
 
-## 既知の制約
+## 音響特徴量の分析方針
 
 Spotify公式のAudio Features / Audio Analysis API は2024年11月以降、新規アプリからは
 利用できなくなっている（拡張アクセス済みの既存アプリのみ利用可）。そのため
-`TrackFeatures`（BPM・energy・danceabilityなど）の取得手段は
-`herz.services.audio_features.AudioFeatureProvider` として抽象化してあり、
-実際の取得方法（拡張アクセス申請 / 自前の音響解析 / 他プロバイダ）は後から差し替えられる設計にしている。
+`TrackFeatures` は自前の信号処理（librosa）で分析する方針にしている。
+
+- `herz.services.audio_features.AudioFeatureExtractor` — 音声バイト列から特徴量を
+  抽出する手段を抽象化したインターフェース
+- `herz.services.dsp_analysis.DspAudioFeatureExtractor` — librosaによる実装（v1）。
+  tempo / key / mode / loudness_db / energy / acousticness / speechiness は信号処理の
+  指標から直接算出。danceability / valence / instrumentalness / liveness は信号処理
+  単体では根拠のある値を出せないため意図的に未実装（フェーズ2で学習済みモデル/
+  音声埋め込みによる算出を想定。EssentiaはmacOS ARM64 + Python 3.12向けの配布物が
+  無く採用を見送った）
+- `POST /analyze` — 音声ファイルをアップロードして上記の分析を試せる動作確認用API
+  （Spotify等の外部音源連携が無くても手元の音声で試せる）
 
 ## セットアップ
 

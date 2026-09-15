@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI
 
-from herz.api.routes import health, search
+from herz.api.routes import analyze, health, search
 
 
 @asynccontextmanager
@@ -18,6 +18,7 @@ def create_app() -> FastAPI:
     app = FastAPI(title="Herz", lifespan=lifespan)
     app.include_router(health.router)
     app.include_router(search.router)
+    app.include_router(analyze.router)
     return app
 
 
