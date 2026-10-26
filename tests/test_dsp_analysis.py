@@ -1,6 +1,10 @@
-import numpy as np
+import io
 
-from herz.services.dsp_analysis import analyze_waveform
+import av
+import numpy as np
+import pytest
+
+from herz.services.dsp_analysis import DspAudioFeatureExtractor, analyze_waveform, decode_audio
 
 SR = 22050
 
@@ -62,3 +66,40 @@ def test_features_are_within_declared_bounds() -> None:
     assert energy is not None and 0.0 <= energy <= 1.0
     assert acousticness is not None and 0.0 <= acousticness <= 1.0
     assert speechiness is not None and 0.0 <= speechiness <= 1.0
+
+
+def _encode_aac(y: np.ndarray) -> bytes:
+    """iTunesプレビューと同じ AAC/m4a 形式にエンコードする。"""
+    buffer = io.BytesIO()
+    with av.open(buffer, mode="w", format="mp4") as container:
+        stream = container.add_stream("aac", rate=SR, layout="mono")
+        frame = av.AudioFrame.from_ndarray(y.astype(np.float32).reshape(1, -1), format="flt", layout="mono")
+        frame.sample_rate = SR
+        for packet in stream.encode(frame):
+            container.mux(packet)
+        for packet in stream.encode(None):
+            container.mux(packet)
+    return buffer.getvalue()
+
+
+def test_extractor_decodes_aac_previews() -> None:
+    y = _chord_wave([261.63, 329.63, 392.00]) * 0.5
+    audio_bytes = _encode_aac(y)
+
+    assert len(decode_audio(audio_bytes)) == pytest.approx(len(y), rel=0.05)
+
+    features = DspAudioFeatureExtractor().extract(audio_bytes)
+    assert (features.key, features.mode) == (0, 1)
+
+
+def test_loud_bright_audio_has_higher_energy_than_quiet_dark_audio() -> None:
+    rng = np.random.default_rng(0)
+    quiet_dark = _chord_wave([110.0, 220.0]) * 0.05
+    loud_bright = np.clip(rng.normal(0, 0.5, int(4.0 * SR)), -1, 1)
+
+    quiet_energy = analyze_waveform(quiet_dark, SR).energy
+    loud_energy = analyze_waveform(loud_bright, SR).energy
+
+    assert quiet_energy is not None and loud_energy is not None
+    assert quiet_energy < 0.3
+    assert loud_energy > 0.7

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+asyncpg://herz:herz@localhost:5432/herz"
 
+    itunes_country: str = "JP"
+
     spotify_client_id: str | None = None
     spotify_client_secret: str | None = None
 

@@ -5,7 +5,9 @@ class TrackFeatures(BaseModel):
     """Sonic characteristics of a track, independent of artist/label/era metadata."""
 
     tempo_bpm: float | None = Field(default=None, description="推定テンポ (BPM)")
-    key: int | None = Field(default=None, ge=-1, le=11, description="推定キー (Pitch Class, 0=C ... 11=B, -1=不明)")
+    key: int | None = Field(
+        default=None, ge=-1, le=11, description="推定キー (Pitch Class, 0=C ... 11=B, -1=不明)"
+    )
     mode: int | None = Field(default=None, ge=0, le=1, description="0=マイナー, 1=メジャー")
     energy: float | None = Field(default=None, ge=0, le=1, description="音の激しさ・強度")
     danceability: float | None = Field(default=None, ge=0, le=1, description="リズムの踊りやすさ")
@@ -31,6 +33,8 @@ class TrackSearchQuery(BaseModel):
     """雰囲気ベースの検索条件。アーティスト名/レーベル/年代は意図的に含まない。"""
 
     genres: list[str] | None = None
+    key: int | None = Field(default=None, ge=0, le=11, description="キー (Pitch Class, 0=C ... 11=B)")
+    mode: int | None = Field(default=None, ge=0, le=1, description="0=マイナー, 1=メジャー")
     tempo_bpm_min: float | None = None
     tempo_bpm_max: float | None = None
     energy_min: float | None = Field(default=None, ge=0, le=1)
@@ -43,4 +47,6 @@ class TrackSearchQuery(BaseModel):
     acousticness_max: float | None = Field(default=None, ge=0, le=1)
     instrumentalness_min: float | None = Field(default=None, ge=0, le=1)
     instrumentalness_max: float | None = Field(default=None, ge=0, le=1)
+    speechiness_min: float | None = Field(default=None, ge=0, le=1)
+    speechiness_max: float | None = Field(default=None, ge=0, le=1)
     limit: int = Field(default=20, ge=1, le=100)

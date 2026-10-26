@@ -1,19 +1,18 @@
 from fastapi import APIRouter
 
-from herz.core.dependencies import SpotifyClientDep
+from herz.core.dependencies import SessionDep
 from herz.schemas.track import Track, TrackSearchQuery
+from herz.services import track_search
 
 router = APIRouter(prefix="/search", tags=["search"])
 
 
 @router.post("", response_model=list[Track])
-async def search_tracks(query: TrackSearchQuery, spotify: SpotifyClientDep) -> list[Track]:
-    """雰囲気条件で楽曲を検索する。
+async def search_tracks(query: TrackSearchQuery, session: SessionDep) -> list[Track]:
+    """雰囲気条件（ジャンル・キー・BPM・energy等の範囲）で取り込み済みの楽曲を検索する。
 
-    現時点ではSpotifyカタログ検索（ジャンル・キーワード）のみに対応しており、
-    BPM/energy等の音響特徴量による絞り込みは未実装（取得した音源をDspAudioFeatureExtractorで
-    解析し、DBに保存してから検索対象にする導線が必要）。features フィールドは将来ここで埋める。
+    検索対象は POST /ingest で解析・保存した楽曲のみ。danceability / valence /
+    instrumentalness はv1の分析では算出していないため、これらの条件を指定すると
+    現状は結果が空になる（フェーズ2で算出予定）。
     """
-    search_terms = " ".join(f"genre:{genre}" for genre in (query.genres or []))
-    tracks = await spotify.search_tracks(query=search_terms or "*", limit=query.limit)
-    return tracks
+    return await track_search.search_tracks(session, query)

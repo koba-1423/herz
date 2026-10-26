@@ -1,14 +1,13 @@
 from fastapi import APIRouter, HTTPException, UploadFile
 
+from herz.core.dependencies import AudioFeatureExtractorDep
 from herz.schemas.track import TrackFeatures
-from herz.services.dsp_analysis import DspAudioFeatureExtractor
 
 router = APIRouter(tags=["analyze"])
-_extractor = DspAudioFeatureExtractor()
 
 
 @router.post("/analyze", response_model=TrackFeatures)
-async def analyze_track(file: UploadFile) -> TrackFeatures:
+async def analyze_track(file: UploadFile, extractor: AudioFeatureExtractorDep) -> TrackFeatures:
     """アップロードされた音声ファイルを解析し、音響特徴量を返す。
 
     Spotify等の外部音源連携がまだ無くても、手元の音声ファイルで
@@ -19,6 +18,6 @@ async def analyze_track(file: UploadFile) -> TrackFeatures:
         raise HTTPException(status_code=400, detail="empty file")
 
     try:
-        return _extractor.extract(audio_bytes)
+        return extractor.extract(audio_bytes)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=f"failed to analyze audio: {exc}") from exc

@@ -25,18 +25,42 @@ Spotify公式のAudio Features / Audio Analysis API は2024年11月以降、新�
   抽出する手段を抽象化したインターフェース
 - `herz.services.dsp_analysis.DspAudioFeatureExtractor` — librosaによる実装（v1）。
   tempo / key / mode / loudness_db / energy / acousticness / speechiness は信号処理の
-  指標から直接算出。danceability / valence / instrumentalness / liveness は信号処理
+  指標から直接算出（energy は音圧とスペクトル重心＝音の明るさの組み合わせ）。danceability / valence / instrumentalness / liveness は信号処理
   単体では根拠のある値を出せないため意図的に未実装（フェーズ2で学習済みモデル/
   音声埋め込みによる算出を想定。EssentiaはmacOS ARM64 + Python 3.12向けの配布物が
   無く採用を見送った）
 - `POST /analyze` — 音声ファイルをアップロードして上記の分析を試せる動作確認用API
   （Spotify等の外部音源連携が無くても手元の音声で試せる）
 
+## 検索の流れ
+
+1. `POST /ingest` — iTunes Search API でキーワード検索し、30秒プレビュー（AAC/m4a）を
+   ダウンロード・解析して `tracks` テーブルに保存する（分析済みの曲はスキップ）。
+   Spotifyは新規アプリだと `preview_url` が null で返るため、音源取得には iTunes を使う。
+   AAC のデコードには ffmpeg 同梱の PyAV を使うため、ffmpeg の別途インストールは不要。
+2. `POST /search` — 取り込み済みの楽曲を、ジャンル・キー・長短調・BPM・energy などの
+   範囲条件で検索する。範囲条件を指定した特徴量が未算出の曲は結果から除外される。
+
+```bash
+curl -X POST localhost:8000/ingest -H 'content-type: application/json' \
+  -d '{"term": "city pop", "limit": 20}'
+curl -X POST localhost:8000/search -H 'content-type: application/json' \
+  -d '{"tempo_bpm_min": 100, "tempo_bpm_max": 130, "mode": 1, "energy_max": 0.6}'
+```
+
 ## セットアップ
 
 ```bash
 uv sync
-cp .env.example .env  # Spotify等の認証情報を設定
+cp .env.example .env  # DB接続先・Spotify等の認証情報を設定
+uv run alembic upgrade head
+```
+
+PostgreSQL を用意せずに試す場合は SQLite でも動く:
+
+```bash
+export DATABASE_URL=sqlite+aiosqlite:///./herz.db
+uv run alembic upgrade head
 ```
 
 ## 開発サーバ起動
@@ -61,7 +85,8 @@ uv run mypy .
 src/herz/
   api/routes/    エンドポイント定義
   core/          設定・DI
-  services/      外部API連携（Spotify, Apple Music, 音響特徴量）
+  services/      外部API連携（iTunes, Spotify）・音響特徴量分析・取り込み・検索
   schemas/       Pydanticモデル
-  models/        DB用モデル（今後追加）
+  models/        DB用モデル（SQLAlchemy）
+migrations/      Alembicマイグレーション
 ```
