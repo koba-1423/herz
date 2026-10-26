@@ -1,103 +1,96 @@
-from collections.abc import AsyncIterator
-
 import httpx
-import pytest
+from fastapi import FastAPI
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-from herz.core.dependencies import get_audio_feature_extractor, get_http_client, get_session
-from herz.main import create_app
 from herz.models import TrackRecord
-from herz.schemas.track import TrackFeatures
-
-PREVIEW_OK = "https://audio.example/ok.m4a"
-PREVIEW_MISSING = "https://audio.example/missing.m4a"
-
-
-def _itunes_item(track_id: int, preview_url: str | None, genre: str = "J-Pop") -> dict[str, object]:
-    return {
-        "kind": "song",
-        "trackId": track_id,
-        "trackName": f"Song {track_id}",
-        "artistName": "Artist",
-        "primaryGenreName": genre,
-        "previewUrl": preview_url,
-        "trackViewUrl": f"https://music.apple.com/jp/song/{track_id}",
-    }
-
-
-def _itunes_handler(request: httpx.Request) -> httpx.Response:
-    if request.url.host == "itunes.apple.com":
-        return httpx.Response(
-            200,
-            json={
-                "results": [
-                    _itunes_item(1, PREVIEW_OK),
-                    _itunes_item(2, PREVIEW_MISSING),
-                    _itunes_item(3, None),  # プレビュー無しは候補から除外される
-                ]
-            },
-        )
-    if str(request.url) == PREVIEW_OK:
-        return httpx.Response(200, content=b"fake-audio")
-    return httpx.Response(404)
-
-
-class _FakeExtractor:
-    def extract(self, audio_bytes: bytes) -> TrackFeatures:
-        assert audio_bytes == b"fake-audio"
-        return TrackFeatures(tempo_bpm=120.0, key=0, mode=1, energy=0.5)
-
-
-@pytest.fixture
-async def client(session_factory: async_sessionmaker[AsyncSession]) -> AsyncIterator[httpx.AsyncClient]:
-    app = create_app()
-
-    async def override_session() -> AsyncIterator[AsyncSession]:
-        async with session_factory() as session:
-            yield session
-
-    async with httpx.AsyncClient(transport=httpx.MockTransport(_itunes_handler)) as http_client:
-        app.dependency_overrides[get_session] = override_session
-        app.dependency_overrides[get_http_client] = lambda: http_client
-        app.dependency_overrides[get_audio_feature_extractor] = _FakeExtractor
-        async with httpx.AsyncClient(
-            transport=httpx.ASGITransport(app=app), base_url="http://test"
-        ) as client:
-            yield client
+from tests.conftest import enable_fake_embedder
 
 
 async def test_ingest_stores_analyzed_tracks(
     client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
 ) -> None:
-    response = await client.post("/ingest", json={"term": "city pop"})
+    response = await client.post("/ingest", json={"term": "anything"})
 
     assert response.status_code == 200
     body = response.json()
-    assert [track["id"] for track in body["ingested"]] == ["itunes:1"]
-    assert body["ingested"][0]["features"]["tempo_bpm"] == 120.0
+    assert [track["id"] for track in body["ingested"]] == ["itunes:1", "itunes:4"]
+    assert body["ingested"][0]["features"]["tempo_bpm"] == 70.0
     assert body["ingested"][0]["genres"] == ["J-Pop"]
     assert [failure["track_id"] for failure in body["failed"]] == ["itunes:2"]
 
     async with session_factory() as session:
-        stored = (await session.scalars(select(TrackRecord))).all()
-    assert [(record.id, record.energy) for record in stored] == [("itunes:1", 0.5)]
+        stored = (await session.scalars(select(TrackRecord).order_by(TrackRecord.id))).all()
+    assert [(record.id, record.energy, record.embedding) for record in stored] == [
+        ("itunes:1", 0.2, None),
+        ("itunes:4", 0.9, None),
+    ]
 
 
 async def test_ingest_skips_already_analyzed_tracks(client: httpx.AsyncClient) -> None:
-    await client.post("/ingest", json={"term": "city pop"})
-    response = await client.post("/ingest", json={"term": "city pop"})
+    await client.post("/ingest", json={"term": "anything"})
+    response = await client.post("/ingest", json={"term": "anything"})
 
     body = response.json()
     assert body["ingested"] == []
-    assert body["skipped_track_ids"] == ["itunes:1"]
+    assert body["skipped_track_ids"] == ["itunes:1", "itunes:4"]
 
 
 async def test_ingested_tracks_are_searchable(client: httpx.AsyncClient) -> None:
-    await client.post("/ingest", json={"term": "city pop"})
+    await client.post("/ingest", json={"term": "anything"})
 
-    hit = await client.post("/search", json={"genres": ["j-pop"], "tempo_bpm_min": 100, "tempo_bpm_max": 130})
-    miss = await client.post("/search", json={"tempo_bpm_min": 140})
+    hit = await client.post("/search", json={"genres": ["j-pop"], "tempo_bpm_min": 60, "tempo_bpm_max": 80})
+    miss = await client.post("/search", json={"tempo_bpm_min": 180})
 
     assert [track["id"] for track in hit.json()] == ["itunes:1"]
+    assert hit.json()[0]["similarity"] is None
     assert miss.json() == []
+
+
+async def test_ingest_computes_embeddings_when_enabled(
+    app: FastAPI, client: httpx.AsyncClient, session_factory: async_sessionmaker[AsyncSession]
+) -> None:
+    enable_fake_embedder(app)
+    await client.post("/ingest", json={"term": "anything"})
+
+    async with session_factory() as session:
+        stored = (await session.scalars(select(TrackRecord))).all()
+    assert {record.embedding_model for record in stored} == {"fake-clap"}
+    assert all(
+        vector is not None and vector.shape == (2,) for vector in (r.embedding_vector() for r in stored)
+    )
+
+
+async def test_text_search_ranks_by_similarity_within_filters(
+    app: FastAPI, client: httpx.AsyncClient
+) -> None:
+    enable_fake_embedder(app)
+    await client.post("/ingest", json={"term": "anything"})
+
+    ranked = (await client.post("/search", json={"text": "heavy metal riffs"})).json()
+    filtered = (await client.post("/search", json={"text": "heavy metal riffs", "energy_max": 0.5})).json()
+
+    assert [track["id"] for track in ranked] == ["itunes:4", "itunes:1"]
+    assert ranked[0]["similarity"] > ranked[1]["similarity"]
+    assert [track["id"] for track in filtered] == ["itunes:1"]
+
+
+async def test_text_search_is_unavailable_without_embedder(client: httpx.AsyncClient) -> None:
+    response = await client.post("/search", json={"text": "calm piano"})
+
+    assert response.status_code == 503
+
+
+async def test_backfill_embeds_tracks_ingested_before_clap(app: FastAPI, client: httpx.AsyncClient) -> None:
+    await client.post("/ingest", json={"term": "anything"})
+    enable_fake_embedder(app)
+
+    first = (await client.post("/ingest/embeddings", json={"limit": 1})).json()
+    second = (await client.post("/ingest/embeddings", json={})).json()
+    third = (await client.post("/ingest/embeddings", json={})).json()
+    ranked = (await client.post("/search", json={"text": "soft piano"})).json()
+
+    assert first["embedded_track_ids"] == ["itunes:1"]
+    assert second["embedded_track_ids"] == ["itunes:4"]
+    assert third["embedded_track_ids"] == []
+    assert [track["id"] for track in ranked] == ["itunes:1", "itunes:4"]

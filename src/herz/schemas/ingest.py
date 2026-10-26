@@ -17,3 +17,12 @@ class IngestResponse(BaseModel):
     ingested: list[Track]
     skipped_track_ids: list[str] = Field(description="既に分析済みのため取り込みを省略した楽曲")
     failed: list[IngestFailure]
+
+
+class EmbedBackfillRequest(BaseModel):
+    limit: int = Field(default=50, ge=1, le=500, description="1回の呼び出しで埋め込みを計算する最大件数")
+
+
+class EmbedBackfillResponse(BaseModel):
+    embedded_track_ids: list[str]
+    failed: list[IngestFailure]

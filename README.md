@@ -40,18 +40,38 @@ Spotify公式のAudio Features / Audio Analysis API は2024年11月以降、新�
    AAC のデコードには ffmpeg 同梱の PyAV を使うため、ffmpeg の別途インストールは不要。
 2. `POST /search` — 取り込み済みの楽曲を、ジャンル・キー・長短調・BPM・energy などの
    範囲条件で検索する。範囲条件を指定した特徴量が未算出の曲は結果から除外される。
+   `text` に雰囲気を表す英語の文を渡すと、条件で絞り込んだ曲を文との近さ順に並べる（後述）。
 
 ```bash
 curl -X POST localhost:8000/ingest -H 'content-type: application/json' \
   -d '{"term": "city pop", "limit": 20}'
 curl -X POST localhost:8000/search -H 'content-type: application/json' \
   -d '{"tempo_bpm_min": 100, "tempo_bpm_max": 130, "mode": 1, "energy_max": 0.6}'
+curl -X POST localhost:8000/search -H 'content-type: application/json' \
+  -d '{"text": "relaxing soft piano for a rainy night", "energy_max": 0.5}'
 ```
+
+## 自然文による雰囲気検索 (CLAP)
+
+音声とテキストを同じベクトル空間に埋め込む [CLAP](https://github.com/LAION-AI/CLAP)
+（transformers実装の `laion/larger_clap_general`）で、取り込み時にプレビュー音源の埋め込みを
+算出してDBに保存し、検索時は文の埋め込みとのコサイン類似度で並べる。
+
+- torch / transformers が重いため optional extra (`clap`) にしている。未インストール、または
+  `CLAP_MODEL` を空にした場合は埋め込みを算出せず、`text` 付きの検索は 503 を返す
+- 初回利用時にモデル（約800MB）を Hugging Face からダウンロードする
+- テキストエンコーダは英語のみ対応
+- CLAPは10秒単位の入力のため、30秒のプレビューを10秒ごとに埋め込んで平均している
+  （プロセッサ任せだとランダムに切り出され、結果が毎回変わるため）
+- `laion/larger_clap_music` は音楽特化だが、テキスト埋め込みが入力によらずほぼ同一になり
+  検索に使えなかったため不採用
+- CLAP導入前に取り込んだ曲やモデル変更後の曲は `POST /ingest/embeddings` で埋め込みを後から算出できる
+- 類似度計算はアプリ側での総当たり。数万曲を超えるようなら pgvector への移行を検討する
 
 ## セットアップ
 
 ```bash
-uv sync
+uv sync --extra clap  # 自然文検索が不要なら --extra clap は省略可
 cp .env.example .env  # DB接続先・Spotify等の認証情報を設定
 uv run alembic upgrade head
 ```

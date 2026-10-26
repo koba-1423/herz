@@ -32,6 +32,12 @@ class Track(BaseModel):
 class TrackSearchQuery(BaseModel):
     """雰囲気ベースの検索条件。アーティスト名/レーベル/年代は意図的に含まない。"""
 
+    text: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=300,
+        description="曲の雰囲気を表す自然文（英語）。指定すると他の条件で絞り込んだ上で近い順に並べる",
+    )
     genres: list[str] | None = None
     key: int | None = Field(default=None, ge=0, le=11, description="キー (Pitch Class, 0=C ... 11=B)")
     mode: int | None = Field(default=None, ge=0, le=1, description="0=マイナー, 1=メジャー")
@@ -50,3 +56,9 @@ class TrackSearchQuery(BaseModel):
     speechiness_min: float | None = Field(default=None, ge=0, le=1)
     speechiness_max: float | None = Field(default=None, ge=0, le=1)
     limit: int = Field(default=20, ge=1, le=100)
+
+
+class TrackSearchResult(Track):
+    similarity: float | None = Field(
+        default=None, description="text を指定した場合の、文と曲のコサイン類似度 (-1〜1)"
+    )

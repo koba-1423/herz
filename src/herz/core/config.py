@@ -13,6 +13,9 @@ class Settings(BaseSettings):
 
     itunes_country: str = "JP"
 
+    # 自然文検索用のCLAPモデル。空文字にすると埋め込みの算出・自然文検索を無効化する
+    clap_model: str = "laion/larger_clap_general"
+
     spotify_client_id: str | None = None
     spotify_client_secret: str | None = None
 
