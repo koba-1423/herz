@@ -6,7 +6,7 @@
 
 - 検索条件は音楽的・技術的な語彙で表現する（BPM、ジャンル、エネルギー感、アコースティック度など）
 - Spotify / Apple Music など既存の音楽サブスクサービスと連携し、独自の楽曲DBは持たずに検索体験を提供する
-- まずはAPI/バックエンドのみを対象とし、フロントエンドは後回しにする
+- フロントエンドはビルド不要の素のHTML/CSS/JS（`src/herz/web/`）で、FastAPIが同一オリジンで配信する
 
 ## 技術スタック
 
@@ -89,7 +89,11 @@ uv run alembic upgrade head
 uv run uvicorn herz.main:app --reload
 ```
 
-http://127.0.0.1:8000/docs でAPIドキュメントを確認できる。
+http://127.0.0.1:8000/ で検索画面、http://127.0.0.1:8000/docs でAPIドキュメントを確認できる。
+
+画面では、右側の「ライブラリに曲を追加」でキーワードを入れて曲を取り込み、左側で英語の文や
+BPM・エネルギー等の条件で検索して、30秒プレビューを試聴できる。CLAPのモデルはサーバー起動時に
+裏で読み込むため、起動直後の数秒〜十数秒は自然文検索の初回応答が遅いことがある。
 
 ## テスト・Lint
 
@@ -108,5 +112,6 @@ src/herz/
   services/      外部API連携（iTunes, Spotify）・音響特徴量分析・取り込み・検索
   schemas/       Pydanticモデル
   models/        DB用モデル（SQLAlchemy）
+  web/           フロントエンド（index.html / styles.css / app.js）
 migrations/      Alembicマイグレーション
 ```

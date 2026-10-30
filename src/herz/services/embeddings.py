@@ -63,6 +63,11 @@ class ClapEmbedder:
             self._processor = ClapProcessor.from_pretrained(self.model_name)
         return self._model, self._processor
 
+    def warm_up(self) -> None:
+        """モデルを読み込んでおく。初回の検索がモデル読み込み待ちで遅くなるのを避けるために使う。"""
+        with self._lock:
+            self._load()
+
     def embed_audio(self, audio_bytes: bytes) -> np.ndarray:
         import torch
 

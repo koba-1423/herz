@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 曲の雰囲気で探す</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="masthead-inner">
+        <div>
+          <h1 class="brand">Herz</h1>
+          <p class="tagline">アーティスト名ではなく、曲の雰囲気で探す</p>
+        </div>
+        <p class="stats" id="stats" aria-live="polite"></p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="search" aria-labelledby="search-heading">
+        <h2 id="search-heading" class="visually-hidden">検索</h2>
+        <form id="search-form" class="search-form">
+          <label for="text" class="field-label">どんな雰囲気の曲？</label>
+          <div class="query-row">
+            <input
+              id="text"
+              name="text"
+              type="search"
+              placeholder="relaxing soft piano for a rainy night"
+              autocomplete="off"
+              maxlength="300"
+            />
+            <button type="submit" class="button primary">探す</button>
+          </div>
+          <p class="hint" id="text-hint">
+            雰囲気を英語の文で書くと、近い順に並びます。空欄なら下の条件だけで絞り込みます。
+          </p>
+          <div class="presets" id="presets" aria-label="入力例"></div>
+
+          <details class="filters" id="filters">
+            <summary>条件で絞り込む <span class="filter-count" id="filter-count"></span></summary>
+            <div class="filter-grid">
+              <fieldset class="range">
+                <legend>テンポ (BPM)</legend>
+                <input name="tempo_bpm_min" type="number" min="30" max="250" step="1" placeholder="下限" aria-label="BPMの下限" />
+                <span aria-hidden="true">〜</span>
+                <input name="tempo_bpm_max" type="number" min="30" max="250" step="1" placeholder="上限" aria-label="BPMの上限" />
+              </fieldset>
+              <fieldset class="range">
+                <legend>エネルギー (0〜1)</legend>
+                <input name="energy_min" type="number" min="0" max="1" step="0.05" placeholder="下限" aria-label="エネルギーの下限" />
+                <span aria-hidden="true">〜</span>
+                <input name="energy_max" type="number" min="0" max="1" step="0.05" placeholder="上限" aria-label="エネルギーの上限" />
+              </fieldset>
+              <fieldset class="range">
+                <legend>アコースティック度 (0〜1)</legend>
+                <input name="acousticness_min" type="number" min="0" max="1" step="0.05" placeholder="下限" aria-label="アコースティック度の下限" />
+                <span aria-hidden="true">〜</span>
+                <input name="acousticness_max" type="number" min="0" max="1" step="0.05" placeholder="上限" aria-label="アコースティック度の上限" />
+              </fieldset>
+              <fieldset class="segmented">
+                <legend>長調 / 短調</legend>
+                <label><input type="radio" name="mode" value="" checked /><span>指定なし</span></label>
+                <label><input type="radio" name="mode" value="1" /><span>メジャー</span></label>
+                <label><input type="radio" name="mode" value="0" /><span>マイナー</span></label>
+              </fieldset>
+              <label class="stacked">
+                <span>キー</span>
+                <select name="key" id="key"><option value="">指定なし</option></select>
+              </label>
+              <label class="stacked">
+                <span>ジャンル（カンマ区切り）</span>
+                <input name="genres" type="text" placeholder="J-Pop, ロック" autocomplete="off" />
+              </label>
+            </div>
+            <button type="button" class="button ghost" id="reset-filters">条件をクリア</button>
+          </details>
+        </form>
+
+        <div class="status" id="search-status" role="status" aria-live="polite"></div>
+        <ol class="results" id="results"></ol>
+      </section>
+
+      <aside class="library" aria-labelledby="library-heading">
+        <h2 id="library-heading">ライブラリに曲を追加</h2>
+        <p class="note">
+          iTunesでキーワード検索した曲の30秒プレビューを取り込み、テンポや雰囲気を解析します。
+          検索できるのは取り込んだ曲だけです。
+        </p>
+        <form id="ingest-form" class="ingest-form">
+          <label class="stacked">
+            <span>キーワード（ジャンル・曲名など）</span>
+            <input name="term" type="text" required placeholder="city pop" autocomplete="off" />
+          </label>
+          <label class="stacked">
+            <span>取り込む曲数</span>
+            <input name="limit" type="number" min="1" max="50" value="10" required />
+          </label>
+          <button type="submit" class="button primary">取り込む</button>
+        </form>
+        <div class="status" id="ingest-status" role="status" aria-live="polite"></div>
+
+        <div class="backfill" id="backfill" hidden>
+          <p class="note" id="backfill-note"></p>
+          <button type="button" class="button" id="backfill-button">埋め込みを計算する</button>
+        </div>
+      </aside>
+    </main>
+
+    <audio id="player" preload="none"></audio>
+  </body>
+</html>
