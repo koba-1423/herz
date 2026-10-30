@@ -76,6 +76,17 @@ cp .env.example .env  # DB接続先・Spotify等の認証情報を設定
 uv run alembic upgrade head
 ```
 
+ライブラリの土台として、ジャンル別チャート（22ジャンル × 最大100曲）の人気曲をまとめて取り込める。
+取り込み済みの曲はスキップするので、途中で止めても再実行すれば続きから進む:
+
+```bash
+uv run python -m herz.seed                      # 全ジャンル（約2,000曲・CPUで30〜40分程度）
+uv run python -m herz.seed --genre 27 --limit 30  # J-Popだけ30曲
+```
+
+iTunesのキーワード検索（`POST /ingest`）は曲名・アーティスト名への一致で返るため、ジャンル名で
+探すとそのジャンル名を曲名に含むBGM等が多く混ざる。ジャンルで集めるならチャートを使う。
+
 PostgreSQL を用意せずに試す場合は SQLite でも動く:
 
 ```bash

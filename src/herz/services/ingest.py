@@ -44,10 +44,13 @@ class TrackIngestor:
         self._semaphore = asyncio.Semaphore(_CONCURRENCY)
 
     async def ingest(self, term: str, limit: int) -> IngestResponse:
-        candidates = {
-            f"{SOURCE}:{preview.source_track_id}": preview
-            for preview in await self._itunes.search_previews(term, limit)
-        }
+        return await self.ingest_previews(await self._itunes.search_previews(term, limit))
+
+    async def ingest_chart(self, genre_id: int, limit: int) -> IngestResponse:
+        return await self.ingest_previews(await self._itunes.chart_previews(genre_id, limit))
+
+    async def ingest_previews(self, previews: list[PreviewTrack]) -> IngestResponse:
+        candidates = {f"{SOURCE}:{preview.source_track_id}": preview for preview in previews}
 
         existing = set(
             await self._session.scalars(select(TrackRecord.id).where(TrackRecord.id.in_(candidates)))
