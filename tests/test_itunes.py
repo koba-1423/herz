@@ -35,3 +35,35 @@ async def test_chart_previews_resolves_chart_ids_via_lookup(single_entry: bool) 
     assert [track.source_track_id for track in tracks] == ["11"]  # プレビューの無い曲は除外
     assert requested[0].path == "/jp/rss/topsongs/limit=2/genre=11/json"
     assert requested[1].params["country"] == "JP"
+
+
+async def test_artist_previews_keeps_only_songs_and_artist_ids() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url.params["entity"] == "song"
+        assert request.url.params["country"] == "US"
+        artist = {"wrapperType": "artist", "artistId": 7, "artistName": "Artist"}
+        return httpx.Response(200, json={"results": [artist, {**_song(21), "artistId": 7}]})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http_client:
+        client = ITunesClient(Settings(itunes_country="JP"), http_client)
+        tracks = await client.artist_previews("7", limit=10, country="US")
+
+    assert [(track.source_track_id, track.artist_id) for track in tracks] == [("21", "7")]
+
+
+async def test_bulk_client_retries_when_rate_limited(monkeypatch: pytest.MonkeyPatch) -> None:
+    statuses = iter([403, 200])
+
+    async def no_sleep(_: float) -> None:
+        return None
+
+    monkeypatch.setattr("herz.services.itunes.asyncio.sleep", no_sleep)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(next(statuses), json={"results": [_song(31)]})
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as http_client:
+        client = ITunesClient(Settings(), http_client, min_api_interval_sec=1.0)
+        tracks = await client.lookup_previews(["31"])
+
+    assert [track.source_track_id for track in tracks] == ["31"]

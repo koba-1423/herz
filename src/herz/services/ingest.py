@@ -76,6 +76,7 @@ class TrackIngestor:
                 source_track_id=preview.source_track_id,
                 title=preview.title,
                 artist=preview.artist,
+                source_artist_id=preview.artist_id,
                 genre=preview.genre,
                 preview_url=preview.preview_url,
                 external_url=preview.external_url,

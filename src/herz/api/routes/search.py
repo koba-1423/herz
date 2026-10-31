@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from herz.core.dependencies import AudioTextEmbedderDep, SessionDep
+from herz.core.dependencies import AudioTextEmbedderDep, EmbeddingIndexDep, SessionDep
 from herz.schemas.track import TrackSearchQuery, TrackSearchResult
 from herz.services import track_search
 
@@ -9,7 +9,10 @@ router = APIRouter(prefix="/search", tags=["search"])
 
 @router.post("", response_model=list[TrackSearchResult])
 async def search_tracks(
-    query: TrackSearchQuery, session: SessionDep, embedder: AudioTextEmbedderDep
+    query: TrackSearchQuery,
+    session: SessionDep,
+    embedder: AudioTextEmbedderDep,
+    index: EmbeddingIndexDep,
 ) -> list[TrackSearchResult]:
     """雰囲気条件で取り込み済みの楽曲を検索する。
 
@@ -26,4 +29,4 @@ async def search_tracks(
             status_code=503,
             detail="text search is unavailable: install the `clap` extra and set CLAP_MODEL",
         )
-    return await track_search.search_tracks(session, query, embedder)
+    return await track_search.search_tracks(session, query, embedder, index)

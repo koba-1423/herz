@@ -1,11 +1,11 @@
 import asyncio
 
-import numpy as np
 from sqlalchemy import Select, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from herz.models.track import TrackRecord
 from herz.schemas.track import TrackSearchQuery, TrackSearchResult
+from herz.services.embedding_index import EmbeddingIndex
 from herz.services.embeddings import AudioTextEmbedder
 
 # TrackSearchQuery の `{name}_min` / `{name}_max` と TrackRecord のカラムの対応
@@ -47,8 +47,12 @@ def build_filter_statement(query: TrackSearchQuery) -> Select[tuple[TrackRecord]
 
 
 async def search_tracks(
-    session: AsyncSession, query: TrackSearchQuery, embedder: AudioTextEmbedder | None = None
+    session: AsyncSession,
+    query: TrackSearchQuery,
+    embedder: AudioTextEmbedder | None = None,
+    index: EmbeddingIndex | None = None,
 ) -> list[TrackSearchResult]:
+    """index を渡すと、自然文検索の埋め込みをその索引から引く（渡さなければ毎回DBから読む）。"""
     statement = build_filter_statement(query)
 
     if query.text is None:
@@ -59,19 +63,28 @@ async def search_tracks(
 
     if embedder is None:
         raise ValueError("text search requires an audio-text embedder")
+    if index is None:
+        index = EmbeddingIndex(embedder.model_name)
 
-    # 埋め込みはベクトルDBを使わずアプリ側で総当たりする（数万曲規模までは十分速い）。
+    # 埋め込みはベクトルDBを使わずメモリ上で総当たりする（数十万曲規模までは十分速い）。
     # 規模が大きくなったら pgvector 等への移行を検討する
-    records = await session.scalars(statement.where(TrackRecord.embedding_model == embedder.model_name))
-    candidates = [(record, vector) for record in records if (vector := record.embedding_vector()) is not None]
-    if not candidates:
-        return []
-
+    await index.refresh(session)
+    track_ids = (
+        None
+        if statement.whereclause is None
+        else set(await session.scalars(statement.with_only_columns(TrackRecord.id)))
+    )
     text_vector = await asyncio.to_thread(embedder.embed_text, query.text)
-    similarities = np.stack([vector for _, vector in candidates]) @ text_vector
-    ranked = np.argsort(-similarities)[: query.limit]
+    ranked = index.top(text_vector, query.limit, track_ids)
 
+    records_by_id = {
+        record.id: record
+        for record in await session.scalars(
+            select(TrackRecord).where(TrackRecord.id.in_([track_id for track_id, _ in ranked]))
+        )
+    }
     return [
-        TrackSearchResult(**candidates[i][0].to_schema().model_dump(), similarity=float(similarities[i]))
-        for i in ranked
+        TrackSearchResult(**records_by_id[track_id].to_schema().model_dump(), similarity=similarity)
+        for track_id, similarity in ranked
+        if track_id in records_by_id
     ]

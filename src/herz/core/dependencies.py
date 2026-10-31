@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from herz.core.config import Settings, get_settings
 from herz.services.audio_features import AudioFeatureExtractor
 from herz.services.dsp_analysis import DspAudioFeatureExtractor
+from herz.services.embedding_index import EmbeddingIndex
 from herz.services.embeddings import AudioTextEmbedder, ClapEmbedder
 from herz.services.ingest import TrackIngestor
 from herz.services.itunes import ITunesClient
@@ -69,6 +70,19 @@ def get_audio_text_embedder(settings: SettingsDep) -> AudioTextEmbedder | None:
 
 
 AudioTextEmbedderDep = Annotated[AudioTextEmbedder | None, Depends(get_audio_text_embedder)]
+
+
+def get_embedding_index(request: Request, embedder: AudioTextEmbedderDep) -> EmbeddingIndex | None:
+    """アプリごと・モデルごとに1つの索引を使い回す。"""
+    if embedder is None:
+        return None
+    indexes: dict[str, EmbeddingIndex] = request.app.state.embedding_indexes
+    if embedder.model_name not in indexes:
+        indexes[embedder.model_name] = EmbeddingIndex(embedder.model_name)
+    return indexes[embedder.model_name]
+
+
+EmbeddingIndexDep = Annotated[EmbeddingIndex | None, Depends(get_embedding_index)]
 
 
 def get_track_ingestor(

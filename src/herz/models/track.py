@@ -25,6 +25,7 @@ class TrackRecord(Base):
     source_track_id: Mapped[str] = mapped_column(String(64))
     title: Mapped[str] = mapped_column(String(512))
     artist: Mapped[str] = mapped_column(String(512))
+    source_artist_id: Mapped[str | None] = mapped_column(String(64), index=True)
     genre: Mapped[str | None] = mapped_column(String(128), index=True)
     preview_url: Mapped[str | None] = mapped_column(String(1024))
     external_url: Mapped[str | None] = mapped_column(String(1024))

@@ -47,6 +47,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="Herz", lifespan=lifespan)
+    app.state.embedding_indexes = {}
     app.include_router(health.router)
     app.include_router(search.router)
     app.include_router(analyze.router)
