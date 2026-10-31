@@ -13,6 +13,7 @@
 
 import argparse
 import asyncio
+import importlib.util
 import re
 import time
 from collections.abc import Awaitable, Callable
@@ -39,6 +40,7 @@ DEFAULT_COUNTRIES = (
 _MIN_API_INTERVAL_SEC = 3.5
 _CHART_REFRESH = timedelta(days=1)
 _IDLE_SLEEP_SEC = 3600.0
+_DEFAULT_CONCURRENCY = 4
 _ERROR_SLEEP_SEC = 60.0
 
 IngestFn = Callable[[list[PreviewTrack]], Awaitable[IngestResponse]]
@@ -194,7 +196,12 @@ class Crawler:
             return await session.scalar(select(func.count()).select_from(TrackRecord)) or 0
 
 
-async def crawl(countries: list[str], chart_limit: int, artist_songs: int) -> None:
+async def crawl(countries: list[str], chart_limit: int, artist_songs: int, threads: int | None) -> None:
+    if threads and importlib.util.find_spec("torch") is not None:
+        # PCへの負荷（発熱）を抑えたいとき用。曲の並列処理もスレッド数に合わせて絞る
+        import torch
+
+        torch.set_num_threads(threads)
     settings = get_settings()
     engine = create_async_engine(settings.database_url)
     if engine.dialect.name == "sqlite":
@@ -212,7 +219,9 @@ async def crawl(countries: list[str], chart_limit: int, artist_songs: int) -> No
 
             async def ingest(previews: list[PreviewTrack]) -> IngestResponse:
                 async with session_factory() as session:
-                    return await TrackIngestor(session, itunes, extractor, embedder).ingest_previews(previews)
+                    return await TrackIngestor(
+                        session, itunes, extractor, embedder, concurrency=threads or _DEFAULT_CONCURRENCY
+                    ).ingest_previews(previews)
 
             crawler = Crawler(session_factory, itunes, ingest, countries, chart_limit, artist_songs)
             await crawler.run_forever()
@@ -231,10 +240,15 @@ def main() -> None:
     )
     parser.add_argument("--chart-limit", type=int, default=200, help="チャートごとの最大曲数 (最大200)")
     parser.add_argument("--artist-songs", type=int, default=50, help="アーティストごとに集める最大曲数")
+    parser.add_argument(
+        "--threads",
+        type=int,
+        help="使うCPUスレッド数の上限（PCが熱くなるときに小さくする。省略時は制限なし）",
+    )
     args = parser.parse_args()
 
     countries = [country.strip().upper() for country in args.countries.split(",") if country.strip()]
-    asyncio.run(crawl(countries, args.chart_limit, args.artist_songs))
+    asyncio.run(crawl(countries, args.chart_limit, args.artist_songs, args.threads))
 
 
 if __name__ == "__main__":

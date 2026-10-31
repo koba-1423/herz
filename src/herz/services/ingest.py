@@ -36,12 +36,13 @@ class TrackIngestor:
         itunes: ITunesClient,
         extractor: AudioFeatureExtractor,
         embedder: AudioTextEmbedder | None = None,
+        concurrency: int = _CONCURRENCY,
     ) -> None:
         self._session = session
         self._itunes = itunes
         self._extractor = extractor
         self._embedder = embedder
-        self._semaphore = asyncio.Semaphore(_CONCURRENCY)
+        self._semaphore = asyncio.Semaphore(concurrency)
 
     async def ingest(self, term: str, limit: int) -> IngestResponse:
         return await self.ingest_previews(await self._itunes.search_previews(term, limit))
