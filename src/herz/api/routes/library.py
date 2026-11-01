@@ -1,9 +1,12 @@
-from fastapi import APIRouter
+import httpx
+from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, select
 
-from herz.core.dependencies import AudioTextEmbedderDep, SessionDep
+from herz.core.dependencies import AudioTextEmbedderDep, SessionDep, TrackIngestorDep
 from herz.models.track import TrackRecord
+from herz.schemas.catalog import AddTrackRequest
 from herz.schemas.library import LibraryStats
+from herz.schemas.track import Track
 
 router = APIRouter(prefix="/library", tags=["library"])
 
@@ -23,3 +26,15 @@ async def library_stats(session: SessionDep, embedder: AudioTextEmbedderDep) -> 
         text_search_available=embedder is not None,
         embedding_model=embedder.model_name if embedder is not None else None,
     )
+
+
+@router.post("/tracks", response_model=Track)
+async def add_track(request: AddTrackRequest, ingestor: TrackIngestorDep) -> Track:
+    """iTunesの曲IDの曲をライブラリに取り込む（取り込み済みならそのまま返す）。数秒かかる。"""
+    try:
+        record = await ingestor.ensure_track(request.source_track_id)
+    except httpx.HTTPError as exc:
+        raise HTTPException(status_code=502, detail=f"iTunes lookup failed: {exc}") from exc
+    if record is None:
+        raise HTTPException(status_code=404, detail="track not found or its preview could not be analyzed")
+    return record.to_schema()

@@ -13,7 +13,12 @@ const PRESETS = [
 
 const RANGE_FIELDS = ["tempo_bpm", "energy", "acousticness"];
 
+const FAVORITES_KEY = "herz.favorites";
+const MIN_FAVORITES_FOR_ANALYSIS = 3;
+
 const ICON_PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>';
+const ICON_HEART =
+  '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 14s-5.5-3.4-5.5-7.2A3 3 0 0 1 8 4.6a3 3 0 0 1 5.5 2.2C13.5 10.6 8 14 8 14z"/></svg>';
 const ICON_PAUSE =
   '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 2.5h3v11h-3zM9.5 2.5h3v11h-3z"/></svg>';
 
@@ -36,12 +41,67 @@ const elements = {
   backfillNote: $("#backfill-note"),
   backfillButton: $("#backfill-button"),
   player: $("#player"),
+  tabs: [$("#tab-search"), $("#tab-taste")],
+  seed: $("#seed"),
+  seedLabel: $("#seed-label"),
+  seedClear: $("#seed-clear"),
+  favoriteCount: $("#favorite-count"),
+  catalogForm: $("#catalog-form"),
+  catalogTerm: $("#catalog-term"),
+  catalogStatus: $("#catalog-status"),
+  catalog: $("#catalog"),
+  favorites: $("#favorites"),
+  favoritesSummary: $("#favorites-summary"),
+  analyzeButton: $("#analyze-button"),
+  tasteStatus: $("#taste-status"),
+  profile: $("#profile"),
+  profileWords: $("#profile-words"),
+  profileAvoided: $("#profile-avoided"),
+  profileFeatures: $("#profile-features"),
+  recommendations: $("#recommendations"),
 };
 
 const state = {
   stats: null,
   playingId: null,
+  seed: null, // 「この曲みたいな曲」の基準にしている曲
+  favorites: loadFavorites(), // [{ id, title, artist, artwork_url }]
 };
+
+// ---- favorites (このブラウザだけに保存) ----
+
+function loadFavorites() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(FAVORITES_KEY) || "[]");
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveFavorites() {
+  try {
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(state.favorites));
+  } catch {
+    // 保存できなくても、このページを開いている間は使える
+  }
+}
+
+function isFavorite(trackId) {
+  return state.favorites.some((favorite) => favorite.id === trackId);
+}
+
+function toggleFavorite(track) {
+  if (isFavorite(track.id)) {
+    state.favorites = state.favorites.filter((favorite) => favorite.id !== track.id);
+  } else {
+    const { id, title, artist, artwork_url = null } = track;
+    state.favorites = [...state.favorites, { id, title, artist, artwork_url }];
+  }
+  saveFavorites();
+  renderFavorites();
+  syncFavoriteButtons();
+}
 
 // ---- API ----
 
@@ -131,6 +191,7 @@ function buildQuery() {
 
   const text = String(data.get("text") || "").trim();
   if (text && !elements.text.disabled) query.text = text;
+  if (state.seed) query.seed_track_ids = [state.seed.id];
 
   for (const field of RANGE_FIELDS) {
     for (const bound of ["min", "max"]) {
@@ -155,7 +216,7 @@ function buildQuery() {
 }
 
 function countActiveFilters(query) {
-  return Object.keys(query).filter((name) => !["limit", "text"].includes(name)).length;
+  return Object.keys(query).filter((name) => !["limit", "text", "seed_track_ids"].includes(name)).length;
 }
 
 function updateFilterCount() {
@@ -192,11 +253,26 @@ function renderResults(tracks, query) {
     return;
   }
 
-  const ordering = query.text ? "雰囲気が近い順" : "アーティスト名順";
+  const ordering = query.text || query.seed_track_ids ? "雰囲気が近い順" : "アーティスト名順";
   const count = tracks.length >= query.limit ? `上位${tracks.length}曲` : `${tracks.length}曲`;
   setStatus(elements.searchStatus, `${count}（${ordering}）`);
-  elements.results.replaceChildren(...tracks.map(renderTrack));
+  elements.results.replaceChildren(...tracks.map((track) => renderTrack(track)));
   syncPlayingState();
+}
+
+function searchSimilarTo(track) {
+  state.seed = { id: track.id, title: track.title, artist: track.artist };
+  elements.seedLabel.textContent = `「${track.title}」（${track.artist}）に雰囲気が近い曲`;
+  elements.seed.hidden = false;
+  showTab("search");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  runSearch();
+}
+
+function clearSeed() {
+  state.seed = null;
+  elements.seed.hidden = true;
+  runSearch();
 }
 
 function formatKey(features) {
@@ -244,6 +320,19 @@ function renderTrack(track) {
           "一致度",
         ]);
 
+  const favorite = el("button", {
+    type: "button",
+    className: "icon-button favorite-button",
+    "aria-pressed": String(isFavorite(track.id)),
+    "aria-label": `${track.title} を好きな曲に追加`,
+    title: "好きな曲に追加",
+  });
+  favorite.innerHTML = ICON_HEART;
+  favorite.addEventListener("click", () => toggleFavorite(track));
+
+  const similar = el("button", { type: "button", className: "link-button", text: "似た曲" });
+  similar.addEventListener("click", () => searchSimilarTo(track));
+
   return el("li", { className: "track", "data-id": track.id }, [
     play,
     el("div", { className: "meta" }, [
@@ -252,6 +341,8 @@ function renderTrack(track) {
     ]),
     score,
     el("div", { className: "facts" }, [
+      favorite,
+      similar,
       ...tags,
       meter("エネルギー", features.energy),
       meter("アコースティック", features.acousticness),
@@ -287,7 +378,7 @@ function togglePlay(track) {
 
 function syncPlayingState() {
   const playing = !elements.player.paused;
-  for (const item of elements.results.querySelectorAll(".track")) {
+  for (const item of document.querySelectorAll(".track")) {
     const active = item.dataset.id === state.playingId && playing;
     item.classList.toggle("playing", active);
     const button = item.querySelector(".play");
@@ -349,6 +440,183 @@ async function runBackfill() {
   }
 }
 
+// ---- tabs ----
+
+function showTab(name) {
+  for (const tab of elements.tabs) {
+    const selected = tab.id === `tab-${name}`;
+    tab.setAttribute("aria-selected", String(selected));
+    document.getElementById(tab.getAttribute("aria-controls")).hidden = !selected;
+  }
+}
+
+// ---- taste ----
+
+function syncFavoriteButtons() {
+  for (const item of document.querySelectorAll(".track")) {
+    const button = item.querySelector(".favorite-button");
+    if (button) button.setAttribute("aria-pressed", String(isFavorite(item.dataset.id)));
+  }
+}
+
+function artwork(url) {
+  return url
+    ? el("img", { className: "artwork", src: url, alt: "", loading: "lazy", width: "40", height: "40" })
+    : el("span", { className: "artwork", "aria-hidden": "true" });
+}
+
+function renderFavorites() {
+  const count = state.favorites.length;
+  elements.favoriteCount.textContent = count ? String(count) : "";
+  elements.favoritesSummary.textContent = count ? `${count}曲` : "";
+  elements.analyzeButton.disabled = count < MIN_FAVORITES_FOR_ANALYSIS;
+
+  if (!count) {
+    elements.favorites.replaceChildren(
+      el("li", { className: "empty", text: "まだありません。上で曲を探して追加してください。" }),
+    );
+    return;
+  }
+  elements.favorites.replaceChildren(
+    ...state.favorites.map((favorite) => {
+      const remove = el("button", {
+        type: "button",
+        className: "button ghost",
+        text: "外す",
+        "aria-label": `${favorite.title} を好きな曲から外す`,
+      });
+      remove.addEventListener("click", () => toggleFavorite(favorite));
+      return el("li", { className: "song-row" }, [
+        artwork(favorite.artwork_url),
+        el("div", { className: "meta" }, [
+          el("div", { className: "track-title", text: favorite.title }),
+          el("div", { className: "track-artist", text: favorite.artist }),
+        ]),
+        remove,
+      ]);
+    }),
+  );
+}
+
+async function runCatalogSearch(event) {
+  event.preventDefault();
+  const term = elements.catalogTerm.value.trim();
+  if (!term) return;
+
+  setStatus(elements.catalogStatus, "探しています…", { busy: true });
+  try {
+    const songs = await api(`/catalog/search?${new URLSearchParams({ term, limit: "8" })}`);
+    setStatus(elements.catalogStatus, songs.length ? "" : "見つかりませんでした。");
+    elements.catalog.replaceChildren(...songs.map(renderCatalogSong));
+  } catch (error) {
+    setStatus(elements.catalogStatus, `検索に失敗しました: ${error.message}`, { error: true });
+  }
+}
+
+function renderCatalogSong(song) {
+  const add = el("button", { type: "button", className: "button", text: "追加" });
+  const added = () => {
+    add.textContent = "追加済み";
+    add.disabled = true;
+  };
+  if (song.track_id && isFavorite(song.track_id)) added();
+
+  add.addEventListener("click", async () => {
+    add.disabled = true;
+    add.textContent = song.track_id ? "追加中…" : "解析中…";
+    try {
+      // ライブラリに無い曲はここで取り込む（プレビューの解析に数秒かかる）
+      const track = await api("/library/tracks", {
+        method: "POST",
+        body: { source_track_id: song.source_track_id },
+      });
+      if (!isFavorite(track.id)) toggleFavorite({ ...track, artwork_url: song.artwork_url });
+      added();
+    } catch (error) {
+      add.disabled = false;
+      add.textContent = "追加";
+      setStatus(elements.catalogStatus, `追加できませんでした: ${error.message}`, { error: true });
+    }
+  });
+
+  return el("li", { className: "song-row" }, [
+    artwork(song.artwork_url),
+    el("div", { className: "meta" }, [
+      el("div", { className: "track-title", text: song.title }),
+      el("div", { className: "track-artist", text: [song.artist, song.genre].filter(Boolean).join(" ・ ") }),
+    ]),
+    add,
+  ]);
+}
+
+function describePercentile(percentile) {
+  if (percentile >= 50) return `上位${Math.max(1, Math.round(100 - percentile))}%`;
+  return `下位${Math.max(1, Math.round(percentile))}%`;
+}
+
+function formatFeatureValue(feature) {
+  if (feature.name === "tempo_bpm") return `平均 ${Math.round(feature.value)} BPM`;
+  if (feature.name === "loudness_db") return `平均 ${feature.value.toFixed(1)} dB`;
+  return `平均 ${feature.value.toFixed(2)}`;
+}
+
+async function runTasteAnalysis() {
+  setStatus(elements.tasteStatus, "分析しています…", { busy: true });
+  try {
+    const profile = await withBusyButton(elements.analyzeButton, () =>
+      api("/taste", {
+        method: "POST",
+        body: { track_ids: state.favorites.map((favorite) => favorite.id), recommendation_limit: 20 },
+      }),
+    );
+    setStatus(elements.tasteStatus, `${profile.track_count}曲から分析しました`);
+    renderProfile(profile);
+  } catch (error) {
+    elements.profile.hidden = true;
+    setStatus(elements.tasteStatus, `分析に失敗しました: ${error.message}`, { error: true });
+  }
+}
+
+function renderProfile(profile) {
+  const strongest = profile.descriptors[0]?.score || 1;
+  elements.profileWords.replaceChildren(
+    ...profile.descriptors.map((descriptor) => {
+      // 一番強い言葉を基準に、文字の大きさで強さを表す
+      const weight = Math.max(0.35, descriptor.score / strongest);
+      const word = el("li", { className: "word", text: descriptor.label, title: descriptor.prompt });
+      word.style.setProperty("--weight", weight.toFixed(2));
+      return word;
+    }),
+  );
+  elements.profileAvoided.textContent = profile.avoided.length
+    ? `逆に少なめなのは「${profile.avoided.map((d) => d.label).join("」「")}」。`
+    : "";
+
+  const features = profile.features.map((feature) => {
+    const bar = el("span", { className: "meter-bar wide", "aria-hidden": "true" }, el("span"));
+    bar.firstChild.style.width = `${Math.round(feature.percentile)}%`;
+    return el("li", { className: "insight" }, [
+      el("span", { className: "insight-label", text: feature.label }),
+      bar,
+      el("span", { className: "insight-value", text: `${describePercentile(feature.percentile)}・${formatFeatureValue(feature)}` }),
+    ]);
+  });
+  if (profile.major_ratio !== null) {
+    const major = Math.round(profile.major_ratio * 100);
+    features.push(
+      el("li", { className: "insight" }, [
+        el("span", { className: "insight-label", text: "曲調" }),
+        el("span", { className: "insight-value", text: `長調（明るめ）${major}% ・ 短調（暗め）${100 - major}%` }),
+      ]),
+    );
+  }
+  elements.profileFeatures.replaceChildren(...features);
+
+  elements.recommendations.replaceChildren(...profile.recommendations.map((track) => renderTrack(track)));
+  elements.profile.hidden = false;
+  syncPlayingState();
+}
+
 // ---- wiring ----
 
 function init() {
@@ -376,6 +644,14 @@ function init() {
     elements.text.value = text;
     updateFilterCount();
   });
+
+  elements.seedClear.addEventListener("click", clearSeed);
+  for (const tab of elements.tabs) {
+    tab.addEventListener("click", () => showTab(tab.id.replace("tab-", "")));
+  }
+  elements.catalogForm.addEventListener("submit", runCatalogSearch);
+  elements.analyzeButton.addEventListener("click", runTasteAnalysis);
+  renderFavorites();
 
   elements.ingestForm.addEventListener("submit", runIngest);
   elements.backfillButton.addEventListener("click", runBackfill);

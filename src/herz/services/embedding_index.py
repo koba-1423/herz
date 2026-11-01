@@ -42,6 +42,14 @@ class EmbeddingIndex:
                 if self._watermark is None or updated_at > self._watermark:
                     self._watermark = updated_at
 
+    def vector(self, track_id: str) -> np.ndarray | None:
+        position = self._positions.get(track_id)
+        return None if position is None else self._matrix[position]
+
+    def mean_vector(self) -> np.ndarray | None:
+        """ライブラリ全体の平均。好みの分析で「ライブラリ全体と比べてどうか」を測る基準に使う。"""
+        return None if not self._ids else self._matrix[: len(self._ids)].mean(axis=0)
+
     def top(
         self, text_vector: np.ndarray, limit: int, track_ids: set[str] | None = None
     ) -> list[tuple[str, float]]:

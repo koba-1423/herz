@@ -19,8 +19,15 @@
     </header>
 
     <main class="layout">
-      <section class="search" aria-labelledby="search-heading">
-        <h2 id="search-heading" class="visually-hidden">検索</h2>
+      <div class="main-column">
+      <nav class="tabs" role="tablist" aria-label="表示の切り替え">
+        <button type="button" role="tab" class="tab" id="tab-search" aria-controls="panel-search" aria-selected="true">雰囲気で探す</button>
+        <button type="button" role="tab" class="tab" id="tab-taste" aria-controls="panel-taste" aria-selected="false">
+          あなたの好み <span class="tab-count" id="favorite-count"></span>
+        </button>
+      </nav>
+
+      <section class="search" id="panel-search" role="tabpanel" aria-labelledby="tab-search">
         <form id="search-form" class="search-form">
           <label for="text" class="field-label">どんな雰囲気の曲？</label>
           <div class="query-row">
@@ -38,6 +45,10 @@
             雰囲気を英語の文で書くと、近い順に並びます。空欄なら下の条件だけで絞り込みます。
           </p>
           <div class="presets" id="presets" aria-label="入力例"></div>
+          <div class="seed" id="seed" hidden>
+            <span id="seed-label"></span>
+            <button type="button" class="button ghost" id="seed-clear" aria-label="この曲を基準にした検索をやめる">×</button>
+          </div>
 
           <details class="filters" id="filters">
             <summary>条件で絞り込む <span class="filter-count" id="filter-count"></span></summary>
@@ -82,6 +93,43 @@
         <div class="status" id="search-status" role="status" aria-live="polite"></div>
         <ol class="results" id="results"></ol>
       </section>
+
+      <section class="taste" id="panel-taste" role="tabpanel" aria-labelledby="tab-taste" hidden>
+        <div class="search-form">
+          <form id="catalog-form">
+            <label for="catalog-term" class="field-label">好きな曲を追加</label>
+            <div class="query-row">
+              <input id="catalog-term" type="search" placeholder="曲名やアーティスト名" autocomplete="off" maxlength="200" />
+              <button type="submit" class="button">探す</button>
+            </div>
+            <p class="hint">3曲以上追加すると、あなたの好みの傾向を分析できます。結果の ♡ からも追加できます。</p>
+          </form>
+          <div class="status" id="catalog-status" role="status" aria-live="polite"></div>
+          <ul class="catalog" id="catalog"></ul>
+
+          <div class="favorites-head">
+            <h2>好きな曲 <span class="muted" id="favorites-summary"></span></h2>
+            <button type="button" class="button primary" id="analyze-button" disabled>好みを分析する</button>
+          </div>
+          <ul class="favorites" id="favorites"></ul>
+        </div>
+
+        <div class="status" id="taste-status" role="status" aria-live="polite"></div>
+        <div class="profile" id="profile" hidden>
+          <section class="profile-card">
+            <h2>あなたの好みを表す言葉</h2>
+            <ul class="words" id="profile-words"></ul>
+            <p class="note" id="profile-avoided"></p>
+          </section>
+          <section class="profile-card">
+            <h2>音の傾向 <span class="muted">（ライブラリ全体の中での位置）</span></h2>
+            <ul class="insights" id="profile-features"></ul>
+          </section>
+          <h2 class="section-title">好みに近い、別のアーティストの曲</h2>
+          <ol class="results" id="recommendations"></ol>
+        </div>
+      </section>
+      </div>
 
       <aside class="library" aria-labelledby="library-heading">
         <h2 id="library-heading">ライブラリに曲を追加</h2>

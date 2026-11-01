@@ -38,6 +38,11 @@ class TrackSearchQuery(BaseModel):
         max_length=300,
         description="曲の雰囲気を表す自然文（英語）。指定すると他の条件で絞り込んだ上で近い順に並べる",
     )
+    seed_track_ids: list[str] | None = Field(
+        default=None,
+        max_length=100,
+        description="この曲（たち）に雰囲気が近い順に並べる。text と併用すると両方に近い曲を探す",
+    )
     genres: list[str] | None = None
     key: int | None = Field(default=None, ge=0, le=11, description="キー (Pitch Class, 0=C ... 11=B)")
     mode: int | None = Field(default=None, ge=0, le=1, description="0=マイナー, 1=メジャー")
@@ -55,10 +60,23 @@ class TrackSearchQuery(BaseModel):
     instrumentalness_max: float | None = Field(default=None, ge=0, le=1)
     speechiness_min: float | None = Field(default=None, ge=0, le=1)
     speechiness_max: float | None = Field(default=None, ge=0, le=1)
+    max_per_artist: int | None = Field(
+        default=2,
+        ge=1,
+        description="雰囲気で並べるとき、同じアーティストの曲を何曲まで出すか（null で制限なし）",
+    )
+    exclude_seed_artists: bool = Field(
+        default=False, description="seed曲と同じアーティストの曲を除く（知らない曲を見つけたいとき用）"
+    )
     limit: int = Field(default=20, ge=1, le=100)
+
+    @property
+    def ranks_by_similarity(self) -> bool:
+        return self.text is not None or bool(self.seed_track_ids)
 
 
 class TrackSearchResult(Track):
     similarity: float | None = Field(
-        default=None, description="text を指定した場合の、文と曲のコサイン類似度 (-1〜1)"
+        default=None,
+        description="text / seed_track_ids を指定した場合の、検索条件と曲のコサイン類似度 (-1〜1)",
     )

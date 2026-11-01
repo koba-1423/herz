@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from herz.api.routes import analyze, health, ingest, library, search
+from herz.api.routes import analyze, catalog, health, ingest, library, search, taste
 from herz.core.config import get_settings
 from herz.core.dependencies import get_audio_text_embedder
 from herz.services.embeddings import ClapEmbedder
@@ -53,6 +53,8 @@ def create_app() -> FastAPI:
     app.include_router(analyze.router)
     app.include_router(ingest.router)
     app.include_router(library.router)
+    app.include_router(catalog.router)
+    app.include_router(taste.router)
     # APIルートに一致しなかったリクエストだけが届くよう、静的ファイルは最後にマウントする
     app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")
     return app

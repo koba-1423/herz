@@ -55,6 +55,7 @@ class PreviewTrack:
     genre: str | None
     preview_url: str
     external_url: str | None
+    artwork_url: str | None = None
 
 
 def _parse_tracks(results: list[dict[str, Any]]) -> list[PreviewTrack]:
@@ -67,6 +68,7 @@ def _parse_tracks(results: list[dict[str, Any]]) -> list[PreviewTrack]:
             genre=item.get("primaryGenreName"),
             preview_url=item["previewUrl"],
             external_url=item.get("trackViewUrl"),
+            artwork_url=item.get("artworkUrl100"),
         )
         for item in results
         if item.get("kind") == "song" and item.get("previewUrl")

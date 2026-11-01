@@ -50,6 +50,20 @@ class TrackIngestor:
     async def ingest_chart(self, genre_id: int, limit: int) -> IngestResponse:
         return await self.ingest_previews(await self._itunes.chart_previews(genre_id, limit))
 
+    async def ensure_track(self, source_track_id: str) -> TrackRecord | None:
+        """iTunesの曲IDの楽曲をライブラリに取り込んで返す（取り込み済みならそのまま返す）。
+
+        iTunesに無い・プレビューが無い・解析に失敗した場合は None。
+        """
+        track_id = f"{SOURCE}:{source_track_id}"
+        if (record := await self._session.get(TrackRecord, track_id)) is not None:
+            return record
+        previews = await self._itunes.lookup_previews([source_track_id])
+        if not previews:
+            return None
+        await self.ingest_previews(previews)
+        return await self._session.get(TrackRecord, track_id)
+
     async def ingest_previews(self, previews: list[PreviewTrack]) -> IngestResponse:
         candidates = {f"{SOURCE}:{preview.source_track_id}": preview for preview in previews}
 
