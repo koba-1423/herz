@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from herz.models.track import TrackRecord
 from herz.schemas.track import TrackSearchQuery, TrackSearchResult
-from herz.services.embedding_index import EmbeddingIndex
+from herz.services.embedding_index import EmbeddingIndex, VectorIndex
 from herz.services.embeddings import AudioTextEmbedder
 
 # 重複・同じアーティストを間引く前に取っておく候補の倍数
@@ -64,9 +64,9 @@ async def search_tracks(
     session: AsyncSession,
     query: TrackSearchQuery,
     embedder: AudioTextEmbedder | None = None,
-    index: EmbeddingIndex | None = None,
+    index: VectorIndex | None = None,
 ) -> list[TrackSearchResult]:
-    """index を渡すと、自然文検索の埋め込みをその索引から引く（渡さなければ毎回DBから読む）。"""
+    """index を渡すと、雰囲気の近い曲をその索引で探す（渡さなければ毎回DBから全件読む）。"""
     statement = build_filter_statement(query)
 
     if not query.ranks_by_similarity:
@@ -80,25 +80,21 @@ async def search_tracks(
     if index is None:
         index = EmbeddingIndex(embedder.model_name)
 
-    # 埋め込みはベクトルDBを使わずメモリ上で総当たりする（数十万曲規模までは十分速い）。
-    # 規模が大きくなったら pgvector 等への移行を検討する
-    await index.refresh(session)
-
     seed_ids = list(dict.fromkeys(query.seed_track_ids or []))
     seeds = list(await session.scalars(select(TrackRecord).where(TrackRecord.id.in_(seed_ids))))
-    seed_vectors = [vector for seed in seeds if (vector := index.vector(seed.id)) is not None]
+    seed_vectors = [vector for seed in seeds if (vector := _vector(seed, index.model_name)) is not None]
     text_vector = await asyncio.to_thread(embedder.embed_text, query.text) if query.text else None
     query_vector = combine_query_vectors(text_vector, seed_vectors)
     if query_vector is None:
         return []
 
-    track_ids = (
-        None
-        if statement.whereclause is None
-        else set(await session.scalars(statement.with_only_columns(TrackRecord.id)))
-    )
     # 重複や同じアーティストの曲を後から間引くので、多めに候補を取っておく
-    ranked = index.top(query_vector, query.limit * _OVERFETCH + len(seed_ids), track_ids)
+    ranked = await index.top(
+        session,
+        query_vector,
+        query.limit * _OVERFETCH + len(seed_ids),
+        None if statement.whereclause is None else statement,
+    )
     records_by_id = {
         record.id: record
         for record in await session.scalars(
@@ -110,12 +106,16 @@ async def search_tracks(
     results: list[TrackSearchResult] = []
     for track_id, similarity in ranked:
         record = records_by_id.get(track_id)
-        if record is None or not picker.accept(record, index.vector(track_id)):
+        if record is None or not picker.accept(record, _vector(record, index.model_name)):
             continue
         results.append(TrackSearchResult(**record.to_schema().model_dump(), similarity=similarity))
         if len(results) == query.limit:
             break
     return results
+
+
+def _vector(record: TrackRecord, model_name: str) -> np.ndarray | None:
+    return record.embedding_vector() if record.embedding_model == model_name else None
 
 
 def combine_query_vectors(

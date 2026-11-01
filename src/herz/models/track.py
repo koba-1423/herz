@@ -1,10 +1,11 @@
 from datetime import datetime
 
 import numpy as np
-from sqlalchemy import DateTime, Float, Integer, LargeBinary, String, func
+from sqlalchemy import DateTime, Float, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from herz.models.base import Base
+from herz.models.types import Embedding
 from herz.schemas.track import Track, TrackFeatures
 
 FEATURE_FIELDS = tuple(TrackFeatures.model_fields)
@@ -42,7 +43,7 @@ class TrackRecord(Base):
     liveness: Mapped[float | None] = mapped_column(Float)
     loudness_db: Mapped[float | None] = mapped_column(Float)
 
-    embedding: Mapped[bytes | None] = mapped_column(LargeBinary)
+    embedding: Mapped[bytes | None] = mapped_column(Embedding)
     embedding_model: Mapped[str | None] = mapped_column(String(128), index=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

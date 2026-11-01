@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from herz.models.track import TrackRecord
 from herz.schemas.taste import Descriptor, FeatureInsight, TasteProfile, TasteRequest
 from herz.schemas.track import TrackSearchQuery
-from herz.services.embedding_index import EmbeddingIndex
+from herz.services.embedding_index import VectorIndex
 from herz.services.embeddings import AudioTextEmbedder
 from herz.services.track_search import search_tracks
 
@@ -77,15 +77,18 @@ _descriptor_vectors: dict[str, np.ndarray] = {}
 
 
 async def analyze_taste(
-    session: AsyncSession, request: TasteRequest, embedder: AudioTextEmbedder, index: EmbeddingIndex
+    session: AsyncSession, request: TasteRequest, embedder: AudioTextEmbedder, index: VectorIndex
 ) -> TasteProfile:
-    await index.refresh(session)
     records = list(await session.scalars(select(TrackRecord).where(TrackRecord.id.in_(request.track_ids))))
-    vectors = [vector for record in records if (vector := index.vector(record.id)) is not None]
+    vectors = [
+        vector
+        for record in records
+        if record.embedding_model == index.model_name and (vector := record.embedding_vector()) is not None
+    ]
 
     descriptors: list[Descriptor] = []
     avoided: list[Descriptor] = []
-    library_mean = index.mean_vector()
+    library_mean = await index.mean_vector(session)
     if vectors and library_mean is not None:
         # 平均同士の差を見る（どの曲にも高く出る言葉の影響を打ち消すため、ライブラリ全体の平均を引く）
         direction = np.mean(vectors, axis=0) - library_mean

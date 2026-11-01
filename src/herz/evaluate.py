@@ -17,7 +17,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from herz.core.config import get_settings
 from herz.core.dependencies import get_audio_text_embedder, get_query_translator
 from herz.schemas.track import TrackSearchQuery
-from herz.services.embedding_index import EmbeddingIndex
+from herz.services.embedding_index import make_vector_index
 from herz.services.track_search import search_tracks
 
 
@@ -59,7 +59,7 @@ async def evaluate(limit: int, verbose: bool) -> None:
         raise SystemExit("CLAPが無効です（`uv sync --extra clap` と CLAP_MODEL を確認）")
     translator = get_query_translator(settings)
     engine = create_async_engine(settings.database_url)
-    index = EmbeddingIndex(embedder.model_name)
+    index = make_vector_index(engine.dialect.name, embedder.model_name)
 
     scores: list[float] = []
     try:
@@ -80,7 +80,7 @@ async def evaluate(limit: int, verbose: bool) -> None:
     finally:
         await engine.dispose()
 
-    print(f"平均 precision@{limit}: {sum(scores) / len(scores):.1%}（{len(index)}曲）")
+    print(f"平均 precision@{limit}: {sum(scores) / len(scores):.1%}")
 
 
 def main() -> None:
