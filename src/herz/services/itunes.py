@@ -152,6 +152,12 @@ class ITunesClient:
         )
         return _parse_tracks(response.json()["results"])
 
+    async def album_previews(self, album_id: str, country: str | None = None) -> list[PreviewTrack]:
+        response = await self._api_get(
+            LOOKUP_URL, params={"id": album_id, "entity": "song", "country": country or self._country}
+        )
+        return _parse_tracks(response.json()["results"])
+
     async def download_preview(self, preview_url: str) -> bytes:
         response = await self._http.get(preview_url)
         response.raise_for_status()

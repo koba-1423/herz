@@ -37,12 +37,12 @@
               type="search"
               placeholder="雨の日に聴きたい切ないピアノ"
               autocomplete="off"
-              maxlength="300"
+              maxlength="1000"
             />
             <button type="submit" class="button primary">探す</button>
           </div>
           <p class="hint" id="text-hint">
-            雰囲気を言葉で書くと、近い順に並びます（日本語でも英語でもOK）。空欄なら下の条件だけで絞り込みます。
+            雰囲気を言葉で書くと、近い順に並びます（日本語でも英語でもOK）。Apple Music・Spotify・YouTube の曲のURLを貼ると、その曲に似た曲を探します。
           </p>
           <div class="presets" id="presets" aria-label="入力例"></div>
           <div class="seed" id="seed" hidden>
@@ -99,10 +99,10 @@
           <form id="catalog-form">
             <label for="catalog-term" class="field-label">好きな曲を追加</label>
             <div class="query-row">
-              <input id="catalog-term" type="search" placeholder="曲名やアーティスト名" autocomplete="off" maxlength="200" />
+              <input id="catalog-term" type="search" placeholder="曲名・アーティスト名、または Apple Music / Spotify / YouTube のURL" autocomplete="off" maxlength="1000" />
               <button type="submit" class="button">探す</button>
             </div>
-            <p class="hint">3曲以上追加すると、あなたの好みの傾向を分析できます。結果の ♡ からも追加できます。</p>
+            <p class="hint">曲名のほか、Apple Music・Spotify・YouTube の曲のURLを貼っても探せます。3曲以上追加すると、あなたの好みの傾向を分析できます。</p>
           </form>
           <div class="status" id="catalog-status" role="status" aria-live="polite"></div>
           <ul class="catalog" id="catalog"></ul>

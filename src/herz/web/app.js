@@ -226,7 +226,40 @@ function updateFilterCount() {
   elements.filterCount.textContent = count ? String(count) : "";
 }
 
+const isLink = (text) => /^\s*https?:\/\//.test(text);
+
+// Apple Music / Spotify / YouTube のURLから曲を特定し、ライブラリに取り込んで返す
+async function trackFromLink(url) {
+  const { payload: songs, headers } = await api(`/catalog/search?${new URLSearchParams({ term: url, limit: "5" })}`, {
+    withHeaders: true,
+  });
+  const detected = headers.get("x-herz-detected");
+  if (!songs.length) {
+    const what = detected ? `「${decodeURIComponent(detected)}」` : "このURLの曲";
+    throw new Error(`${what}がiTunesで見つかりませんでした`);
+  }
+  const track = await api("/library/tracks", {
+    method: "POST",
+    body: { source_track_id: songs[0].source_track_id },
+  });
+  return { ...track, artwork_url: songs[0].artwork_url };
+}
+
 async function runSearch() {
+  const text = elements.text.value.trim();
+  if (isLink(text)) {
+    // URLが貼られたら、その曲に雰囲気が近い曲を探す
+    setStatus(elements.searchStatus, "URLの曲を探しています…", { busy: true });
+    try {
+      const track = await trackFromLink(text);
+      elements.text.value = "";
+      searchSimilarTo(track);
+    } catch (error) {
+      setStatus(elements.searchStatus, `URLの曲を特定できませんでした: ${error.message}`, { error: true });
+    }
+    return;
+  }
+
   const query = buildQuery();
   const submit = elements.searchForm.querySelector('button[type="submit"]');
 
@@ -513,10 +546,15 @@ async function runCatalogSearch(event) {
   const term = elements.catalogTerm.value.trim();
   if (!term) return;
 
-  setStatus(elements.catalogStatus, "探しています…", { busy: true });
+  setStatus(elements.catalogStatus, isLink(term) ? "URLの曲を探しています…" : "探しています…", { busy: true });
   try {
-    const songs = await api(`/catalog/search?${new URLSearchParams({ term, limit: "8" })}`);
-    setStatus(elements.catalogStatus, songs.length ? "" : "見つかりませんでした。");
+    const { payload: songs, headers } = await api(
+      `/catalog/search?${new URLSearchParams({ term, limit: "8" })}`,
+      { withHeaders: true },
+    );
+    const detected = headers.get("x-herz-detected");
+    const found = detected ? `「${decodeURIComponent(detected)}」の候補です。` : "";
+    setStatus(elements.catalogStatus, songs.length ? found : `${found}見つかりませんでした。`);
     elements.catalog.replaceChildren(...songs.map(renderCatalogSong));
   } catch (error) {
     setStatus(elements.catalogStatus, `検索に失敗しました: ${error.message}`, { error: true });
