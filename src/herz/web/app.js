@@ -3,12 +3,14 @@
 const KEY_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
 
 const PRESETS = [
-  "relaxing soft piano for a rainy night",
-  "dusty chill beats to study to",
+  "雨の日に聴きたい切ないピアノ",
+  "夜のドライブに合うシティポップ",
+  "疾走感のあるロック",
+  "チルいローファイ",
+  "透明感のある女性ボーカル",
+  "ゴリゴリのメタル",
   "energetic dance music with big synth drops",
-  "warm acoustic guitar and gentle singing",
   "dramatic strings like a film score",
-  "aggressive heavy guitars",
 ];
 
 const RANGE_FIELDS = ["tempo_bpm", "energy", "acousticness"];
@@ -105,7 +107,7 @@ function toggleFavorite(track) {
 
 // ---- API ----
 
-async function api(path, { method = "GET", body } = {}) {
+async function api(path, { method = "GET", body, withHeaders = false } = {}) {
   const response = await fetch(path, {
     method,
     headers: body ? { "content-type": "application/json" } : undefined,
@@ -119,7 +121,7 @@ async function api(path, { method = "GET", body } = {}) {
       : detail || `${response.status} ${response.statusText}`;
     throw new Error(message);
   }
-  return payload;
+  return withHeaders ? { payload, headers: response.headers } : payload;
 }
 
 // ---- DOM helpers ----
@@ -230,15 +232,20 @@ async function runSearch() {
 
   setStatus(elements.searchStatus, "検索しています…", { busy: true });
   try {
-    const tracks = await withBusyButton(submit, () => api("/search", { method: "POST", body: query }));
-    renderResults(tracks, query);
+    const { payload: tracks, headers } = await withBusyButton(submit, () =>
+      api("/search", { method: "POST", body: query, withHeaders: true }),
+    );
+    // 日本語の検索文は英語に変換してから検索される。どう解釈したかを見せる
+    const english = headers.get("x-herz-query");
+    const interpreted = english ? decodeURIComponent(english) : null;
+    renderResults(tracks, query, interpreted !== query.text ? interpreted : null);
   } catch (error) {
     elements.results.replaceChildren();
     setStatus(elements.searchStatus, `検索に失敗しました: ${error.message}`, { error: true });
   }
 }
 
-function renderResults(tracks, query) {
+function renderResults(tracks, query, interpreted = null) {
   if (!tracks.length) {
     const libraryEmpty = state.stats && state.stats.total_tracks === 0;
     setStatus(elements.searchStatus, "");
@@ -255,7 +262,10 @@ function renderResults(tracks, query) {
 
   const ordering = query.text || query.seed_track_ids ? "雰囲気が近い順" : "アーティスト名順";
   const count = tracks.length >= query.limit ? `上位${tracks.length}曲` : `${tracks.length}曲`;
-  setStatus(elements.searchStatus, `${count}（${ordering}）`);
+  setStatus(
+    elements.searchStatus,
+    interpreted ? `${count}（${ordering}）・「${interpreted}」として検索` : `${count}（${ordering}）`,
+  );
   elements.results.replaceChildren(...tracks.map((track) => renderTrack(track)));
   syncPlayingState();
 }

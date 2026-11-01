@@ -14,6 +14,7 @@ from herz.services.embedding_index import EmbeddingIndex
 from herz.services.embeddings import AudioTextEmbedder, ClapEmbedder
 from herz.services.ingest import TrackIngestor
 from herz.services.itunes import ITunesClient
+from herz.services.query_translation import NllbTranslator, QueryTranslator
 from herz.services.spotify import SpotifyClient
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
@@ -95,3 +96,18 @@ def get_track_ingestor(
 
 
 TrackIngestorDep = Annotated[TrackIngestor, Depends(get_track_ingestor)]
+
+
+@lru_cache
+def _nllb_translator(model_name: str) -> NllbTranslator:
+    return NllbTranslator(model_name)
+
+
+def get_query_translator(settings: SettingsDep) -> QueryTranslator:
+    """機械翻訳（辞書で拾えなかった文の予備）は、モデル未設定か `clap` extra 未インストールなら使わない。"""
+    if not settings.translation_model or importlib.util.find_spec("transformers") is None:
+        return QueryTranslator()
+    return QueryTranslator(fallback=_nllb_translator(settings.translation_model))
+
+
+QueryTranslatorDep = Annotated[QueryTranslator, Depends(get_query_translator)]

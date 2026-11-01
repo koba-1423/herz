@@ -11,11 +11,13 @@ from herz.core.dependencies import (
     get_audio_feature_extractor,
     get_audio_text_embedder,
     get_http_client,
+    get_query_translator,
     get_session,
 )
 from herz.main import create_app
 from herz.models import Base
 from herz.schemas.track import TrackFeatures
+from herz.services.query_translation import QueryTranslator
 
 # iTunesのモック: 曲ID -> プレビュー音源の中身（None はダウンロードが404になる曲）
 PREVIEWS: dict[int, bytes | None] = {1: b"piano", 2: None, 4: b"metal"}
@@ -97,6 +99,9 @@ async def app(session_factory: async_sessionmaker[AsyncSession]) -> AsyncIterato
         app.dependency_overrides[get_http_client] = lambda: http_client
         app.dependency_overrides[get_audio_feature_extractor] = FakeExtractor
         app.dependency_overrides[get_audio_text_embedder] = lambda: None
+        app.dependency_overrides[get_query_translator] = lambda: (
+            QueryTranslator()
+        )  # 機械翻訳モデルは読み込まない
         yield app
 
 

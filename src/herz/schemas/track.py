@@ -36,7 +36,7 @@ class TrackSearchQuery(BaseModel):
         default=None,
         min_length=1,
         max_length=300,
-        description="曲の雰囲気を表す自然文（英語）。指定すると他の条件で絞り込んだ上で近い順に並べる",
+        description="曲の雰囲気を表す自然文（日本語・英語）。指定すると他の条件で絞り込んだ上で近い順に並べる",
     )
     seed_track_ids: list[str] | None = Field(
         default=None,
@@ -67,6 +67,10 @@ class TrackSearchQuery(BaseModel):
     )
     exclude_seed_artists: bool = Field(
         default=False, description="seed曲と同じアーティストの曲を除く（知らない曲を見つけたいとき用）"
+    )
+    exclude_karaoke_versions: bool = Field(
+        default=True,
+        description="曲名に Instrumental / off vocal / カラオケ 等が付いた、歌モノの伴奏だけの版を除く",
     )
     limit: int = Field(default=20, ge=1, le=100)
 

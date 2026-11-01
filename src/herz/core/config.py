@@ -15,6 +15,8 @@ class Settings(BaseSettings):
 
     # 自然文検索用のCLAPモデル。空文字にすると埋め込みの算出・自然文検索を無効化する
     clap_model: str = "laion/larger_clap_general"
+    # 日本語の検索文のうち、音楽の言葉の辞書で拾えなかったものを英訳する機械翻訳モデル（空文字で無効）
+    translation_model: str = "facebook/nllb-200-distilled-600M"
 
     spotify_client_id: str | None = None
     spotify_client_secret: str | None = None

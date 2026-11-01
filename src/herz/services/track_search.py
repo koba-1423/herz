@@ -16,6 +16,12 @@ _OVERFETCH = 10
 # 埋め込みのコサイン類似度がこれを超える2曲は同じ音源とみなす
 _SAME_AUDIO = 0.995
 
+# 歌モノの伴奏だけを収録した版の曲名。元の曲と音がほぼ同じで、似た曲検索の上位を埋めてしまう
+_KARAOKE_TITLE = re.compile(
+    r"instrumental|off[\s-]?vocal|karaoke|backing track|\binst\.?(?:\)|\]|$)|カラオケ|オリジナル・?カラオケ",
+    re.IGNORECASE,
+)
+
 # TrackSearchQuery の `{name}_min` / `{name}_max` と TrackRecord のカラムの対応
 _RANGE_FIELDS = (
     "tempo_bpm",
@@ -132,6 +138,7 @@ class _DiversePicker:
 
     - seed曲そのもの、同じ曲名・アーティスト名の曲、音がほぼ同一の曲（国ごとに別IDで入った同じ音源など）
     - max_per_artist を超えた同じアーティストの曲（BGM系のように似た曲を大量に出すアーティスト対策）
+    - exclude_karaoke_versions のとき、カラオケ・インスト版
     """
 
     def __init__(
@@ -148,6 +155,8 @@ class _DiversePicker:
         artist = _normalize_name(record.artist)
         song = _song_key(record)
         if record.id in self._seed_ids or song in self._songs:
+            return False
+        if self._query.exclude_karaoke_versions and _KARAOKE_TITLE.search(record.title):
             return False
         if self._query.exclude_seed_artists and artist in self._seed_artists:
             return False

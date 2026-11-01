@@ -11,19 +11,20 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from herz.api.routes import analyze, catalog, health, ingest, library, search, taste
 from herz.core.config import get_settings
-from herz.core.dependencies import get_audio_text_embedder
+from herz.core.dependencies import get_audio_text_embedder, get_query_translator
 from herz.services.embeddings import ClapEmbedder
+from herz.services.query_translation import NllbTranslator
 
 WEB_DIR = Path(__file__).parent / "web"
 
 logger = logging.getLogger(__name__)
 
 
-async def _warm_up_embedder(embedder: ClapEmbedder) -> None:
+async def _warm_up(model: ClapEmbedder | NllbTranslator) -> None:
     try:
-        await asyncio.to_thread(embedder.warm_up)
+        await asyncio.to_thread(model.warm_up)
     except Exception:
-        logger.exception("failed to load CLAP model %s", embedder.model_name)
+        logger.exception("failed to load model %s", model.model_name)
 
 
 @asynccontextmanager
@@ -32,16 +33,18 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     engine = create_async_engine(settings.database_url)
     app.state.session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
-    # CLAPモデルの読み込みには数秒〜十数秒かかるため、起動をブロックせず裏で読み込んでおく
+    # CLAP・翻訳モデルの読み込みには数秒〜数十秒かかるため、起動をブロックせず裏で読み込んでおく
     embedder = get_audio_text_embedder(settings)
-    warm_up = asyncio.create_task(_warm_up_embedder(embedder)) if isinstance(embedder, ClapEmbedder) else None
+    fallback = get_query_translator(settings).fallback
+    models = [model for model in (embedder, fallback) if isinstance(model, ClapEmbedder | NllbTranslator)]
+    warm_ups = [asyncio.create_task(_warm_up(model)) for model in models]
     try:
         async with httpx.AsyncClient(timeout=10.0) as client:
             app.state.http_client = client
             yield
     finally:
-        if warm_up is not None:
-            warm_up.cancel()
+        for task in warm_ups:
+            task.cancel()
         await engine.dispose()
 
 

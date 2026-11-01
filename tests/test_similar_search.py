@@ -73,3 +73,22 @@ async def test_unknown_seed_returns_nothing(session_factory: async_sessionmaker[
         await session.commit()
 
     assert await _search(session_factory, seed_track_ids=["missing"]) == []
+
+
+async def test_karaoke_versions_are_excluded_by_default(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    async with session_factory() as session:
+        session.add_all(
+            [
+                _record("seed", "A", [1.0, 0.0]),
+                _record("off-vocal", "B", [1.0, 0.2], title="Song (off vocal)"),
+                _record("inst", "C", [1.0, 0.5], title="Song (Inst.)"),
+                _record("karaoke", "D", [1.0, 0.8], title="歌 (オリジナル・カラオケ)"),
+                _record("institute", "E", [1.0, 1.5], title="Institute of Sound"),
+            ]
+        )
+        await session.commit()
+
+    assert await _search(session_factory, seed_track_ids=["seed"]) == ["institute"]
+    assert len(await _search(session_factory, seed_track_ids=["seed"], exclude_karaoke_versions=False)) == 4
