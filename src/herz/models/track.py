@@ -1,7 +1,7 @@
 from datetime import datetime
 
 import numpy as np
-from sqlalchemy import DateTime, Float, Integer, String, func
+from sqlalchemy import DateTime, Float, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from herz.models.base import Base
@@ -24,8 +24,9 @@ class TrackRecord(Base):
     id: Mapped[str] = mapped_column(String(128), primary_key=True)
     source: Mapped[str] = mapped_column(String(32))
     source_track_id: Mapped[str] = mapped_column(String(64))
-    title: Mapped[str] = mapped_column(String(512))
-    artist: Mapped[str] = mapped_column(String(512))
+    # 声優ユニットの曲などで出演者を全員並べると1000文字を超えることがあるので長さは制限しない
+    title: Mapped[str] = mapped_column(Text)
+    artist: Mapped[str] = mapped_column(Text)
     source_artist_id: Mapped[str | None] = mapped_column(String(64), index=True)
     genre: Mapped[str | None] = mapped_column(String(128), index=True)
     preview_url: Mapped[str | None] = mapped_column(String(1024))
