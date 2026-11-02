@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="ja" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 10 Conversation</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="container">
+      <nav>
+        <ul><li><strong class="brand"><i data-lucide="heart-pulse"></i> Herz</strong></li></ul>
+        <ul><li><a href="#" class="secondary">使い方</a></li><li><a href="#" role="button" class="outline">好みの分析</a></li></ul>
+      </nav>
+    </header>
+    <main class="container chat">
+      <hgroup class="intro">
+        <h1>音楽のコンシェルジュに、<br />話しかけてみてください。</h1>
+        <p>うまく言葉にできなくても大丈夫。会話しながら、ぴったりの曲を一緒に探します。</p>
+      </hgroup>
+      <div id="log" class="log"></div>
+      <form id="form" class="composer">
+        <fieldset role="group">
+          <input id="query" placeholder="たとえば「仕事に集中したい、歌詞なしで」" />
+          <button><i data-lucide="send"></i></button>
+        </fieldset>
+        <div id="presets" class="presets"></div>
+      </form>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

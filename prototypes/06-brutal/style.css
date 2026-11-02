@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "@fontsource/space-grotesk/700.css";
+@import "@fontsource/noto-sans-jp/900.css";
+@import "@fontsource/noto-sans-jp/700.css";
+
+@theme {
+  --font-sans: "Noto Sans JP", sans-serif;
+  --font-grotesk: "Space Grotesk", "Noto Sans JP", sans-serif;
+}
+
+.marquee { animation: slide 30s linear infinite; }
+@keyframes slide { to { transform: translateX(-50%); } }

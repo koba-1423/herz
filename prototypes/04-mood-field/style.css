@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@import "@fontsource/zen-kaku-gothic-new/400.css";
+@import "@fontsource/zen-kaku-gothic-new/700.css";
+@import "@fontsource/shippori-mincho/500.css";
+
+@theme {
+  --font-sans: "Zen Kaku Gothic New", sans-serif;
+  --font-display: "Shippori Mincho", serif;
+}
+
+#field {
+  background: radial-gradient(circle at 25% 30%, var(--a), transparent 60%),
+    radial-gradient(circle at 80% 70%, var(--b), transparent 55%), var(--c);
+}

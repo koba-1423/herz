@@ -1,0 +1,41 @@
+@import "@fontsource/shippori-mincho/500.css";
+@import "@fontsource/shippori-mincho/800.css";
+@import "@fontsource/klee-one/400.css";
+
+:root { --washi: #f7f3ea; --sumi: #1f1b17; --shu: #c0392b; }
+* { box-sizing: border-box; margin: 0; }
+body {
+  background: var(--washi);
+  background-image: radial-gradient(#00000008 1px, transparent 1px);
+  background-size: 4px 4px;
+  color: var(--sumi);
+  font-family: "Shippori Mincho", serif;
+  min-height: 100vh;
+  padding: 32px 56px;
+}
+.masthead { display: flex; justify-content: space-between; align-items: baseline; border-bottom: 1px solid var(--sumi); padding-bottom: 12px; }
+.brand { font-weight: 800; font-size: 28px; letter-spacing: 0.2em; }
+.brand small { font-size: 12px; letter-spacing: 0.1em; color: var(--shu); }
+.issue { font-size: 13px; letter-spacing: 0.2em; }
+
+.spread { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; padding-top: 48px; }
+
+.lead { writing-mode: vertical-rl; height: 620px; display: flex; flex-direction: column; gap: 40px; margin-left: auto; }
+.lead h1 { inline-size: max-content; font-size: 64px; font-weight: 800; line-height: 1.5; letter-spacing: 0.08em; }
+.lead .body { font-size: 17px; line-height: 2.2; letter-spacing: 0.12em; inline-size: 420px; margin-top: 140px; }
+
+.side { border-left: 1px solid #1f1b1733; padding-left: 48px; }
+.kicker { font-family: "Klee One"; color: var(--shu); letter-spacing: 0.2em; margin-bottom: 16px; }
+.ask input { width: 100%; font: inherit; font-size: 22px; background: none; border: 0; border-bottom: 1px solid var(--sumi); padding: 8px 0; color: var(--sumi); }
+.ask input:focus { outline: none; }
+.ask > button { margin-top: 16px; font: inherit; font-weight: 800; background: var(--shu); color: var(--washi); border: 0; padding: 10px 28px; letter-spacing: 0.3em; }
+.presets { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 6px 14px; font-family: "Klee One"; font-size: 14px; }
+.presets button { background: none; border: 0; font: inherit; color: #6b6158; cursor: pointer; }
+.presets button::before { content: "◦ "; color: var(--shu); }
+
+.list { list-style: none; padding: 0; margin-top: 40px; counter-reset: n; }
+.list li { counter-increment: n; display: grid; grid-template-columns: 40px 44px 1fr; gap: 16px; align-items: center; padding: 12px 0; border-bottom: 1px dotted #1f1b1755; }
+.list li::before { content: counter(n, cjk-ideographic); color: var(--shu); font-weight: 800; }
+.list .dot { width: 44px; height: 44px; border-radius: 50%; filter: saturate(0.6); }
+.list b { display: block; font-size: 17px; }
+.list span { font-family: "Klee One"; font-size: 13px; color: #6b6158; }

@@ -1,0 +1,22 @@
+@import "tailwindcss";
+@import "@fontsource/m-plus-rounded-1c/400.css";
+@import "@fontsource/m-plus-rounded-1c/800.css";
+
+@theme {
+  --font-sans: "M PLUS Rounded 1c", sans-serif;
+}
+
+.blob {
+  position: absolute;
+  width: 55vw;
+  height: 55vw;
+  border-radius: 9999px;
+  filter: blur(120px);
+  opacity: 0.45;
+}
+
+.glass {
+  border: 1px solid rgb(255 255 255 / 0.12);
+  background: rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(24px);
+}

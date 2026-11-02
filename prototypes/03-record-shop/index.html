@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 03 Record Shop</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <span class="logo">Herz <small>レコード店</small></span>
+      <span class="note">本日の在庫 <b id="count">200,000</b> 枚</span>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="copy">
+          <p class="eyebrow">Since 2026 — 雰囲気で選ぶ音楽の店</p>
+          <h1>店主に、<br />今日の気分を<br />話してください。</h1>
+          <form id="form" class="ask">
+            <label for="query">どんな曲をお探しですか？</label>
+            <div class="row">
+              <input id="query" placeholder="落ち着いたジャズ、サックス" />
+              <button>棚を見る</button>
+            </div>
+          </form>
+          <div id="presets" class="tags"></div>
+        </div>
+        <div class="turntable">
+          <div class="record"><div class="label">Herz<br /><small>33⅓</small></div></div>
+          <div class="arm"></div>
+        </div>
+      </section>
+
+      <section class="shelf">
+        <h2>店主のおすすめ <span id="label"></span></h2>
+        <div id="results" class="crate"></div>
+      </section>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

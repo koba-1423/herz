@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 05 Galaxy</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="h-screen overflow-hidden bg-black text-white">
+    <canvas id="space" class="fixed inset-0"></canvas>
+    <div class="pointer-events-none relative flex h-full flex-col px-10 py-8">
+      <header class="flex items-center justify-between font-mono text-xs tracking-widest text-white/60 uppercase">
+        <span class="text-base font-bold tracking-normal text-white normal-case">Herz</span>
+        <span><span id="count">200,000</span> songs mapped by sound</span>
+      </header>
+      <div class="flex flex-1 flex-col items-center justify-center text-center">
+        <p class="font-mono text-xs tracking-[0.4em] text-cyan-300/80">YOUR MUSIC UNIVERSE</p>
+        <h1 class="mt-4 text-5xl leading-tight font-bold md:text-6xl">似た響きの曲は、<br />近くで光っている。</h1>
+        <form id="form" class="pointer-events-auto mt-10 flex w-full max-w-xl items-center gap-3 rounded-full border border-cyan-200/30 bg-black/50 px-6 py-2 backdrop-blur">
+          <input id="query" class="w-full bg-transparent py-2 outline-none placeholder:text-white/40" placeholder="星を見上げるようなアンビエント" />
+          <button class="font-mono text-sm text-cyan-300 whitespace-nowrap">WARP →</button>
+        </form>
+      </div>
+      <div id="results" class="pointer-events-auto mx-auto flex max-w-5xl gap-3 overflow-hidden"></div>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

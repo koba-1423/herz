@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 02 Aurora</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="min-h-screen overflow-x-hidden bg-[#07060f] text-white">
+    <div class="pointer-events-none fixed inset-0 overflow-hidden">
+      <div class="blob left-[-10%] top-[-20%] bg-fuchsia-600"></div>
+      <div class="blob right-[-15%] top-[10%] bg-indigo-600"></div>
+      <div class="blob bottom-[-30%] left-[30%] bg-cyan-500"></div>
+    </div>
+
+    <div class="relative mx-auto max-w-5xl px-6">
+      <header class="flex items-center justify-between py-6">
+        <span class="text-lg font-bold tracking-wide">Herz<span class="text-fuchsia-400">.</span></span>
+        <span class="rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs text-white/70 backdrop-blur">ログイン不要で使えます</span>
+      </header>
+
+      <section class="pt-20 pb-14 text-center">
+        <h1 class="reveal bg-gradient-to-r from-white via-fuchsia-200 to-cyan-200 bg-clip-text text-5xl leading-tight font-black text-transparent md:text-7xl">
+          今の気分に、<br />ぴったりの一曲を。
+        </h1>
+        <p class="reveal mx-auto mt-6 max-w-xl text-white/60">言葉で雰囲気を伝えるだけ。AIが曲の「音」を聴き比べて、近い曲を見つけます。</p>
+
+        <form id="form" class="reveal glass mx-auto mt-10 flex max-w-2xl items-center gap-3 rounded-2xl p-2 pl-6">
+          <span class="text-fuchsia-300">✦</span>
+          <input id="query" class="w-full bg-transparent py-3 outline-none placeholder:text-white/35" placeholder="夜のドライブ、シティポップ" />
+          <button class="rounded-xl bg-gradient-to-r from-fuchsia-500 to-indigo-500 px-6 py-3 font-semibold whitespace-nowrap shadow-lg shadow-fuchsia-500/30">探す</button>
+        </form>
+        <div id="presets" class="reveal mt-5 flex flex-wrap justify-center gap-2"></div>
+      </section>
+
+      <section id="results" class="grid grid-cols-2 gap-4 pb-20 md:grid-cols-4"></section>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

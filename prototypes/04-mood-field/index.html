@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 04 Mood Field</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="min-h-screen text-white">
+    <div id="field" class="fixed inset-0 -z-10"></div>
+    <div class="mx-auto flex min-h-screen max-w-6xl flex-col px-10 py-8">
+      <header class="flex items-center justify-between text-sm">
+        <span class="font-display text-2xl">Herz</span>
+        <span class="opacity-70">色を選ぶと、音楽が変わる</span>
+      </header>
+
+      <section class="grid flex-1 items-center gap-12 py-12 md:grid-cols-[1fr_1.1fr]">
+        <div>
+          <p id="mood-en" class="font-display text-lg italic opacity-80">Rainy afternoon</p>
+          <h1 id="mood" class="mt-2 text-6xl leading-tight font-bold md:text-7xl">雨の午後</h1>
+          <p id="mood-desc" class="mt-6 max-w-sm leading-loose opacity-80">窓の外の雨音に溶けるような、静かなピアノとやわらかな弦。</p>
+          <div id="moods" class="mt-10 grid grid-cols-3 gap-3"></div>
+          <form id="form" class="mt-8 flex gap-2 rounded-full bg-white/15 p-1.5 pl-5 backdrop-blur">
+            <input id="query" class="w-full bg-transparent outline-none placeholder:text-white/60" placeholder="自分の言葉で気分を書く…" />
+            <button class="rounded-full bg-white px-5 py-2 text-sm font-semibold whitespace-nowrap text-black">探す</button>
+          </form>
+        </div>
+        <ul id="results" class="space-y-2"></ul>
+      </section>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

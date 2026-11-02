@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 09 Retro</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="crt">
+      <header>
+        <span class="logo">♥HERZ</span>
+        <span class="blink">● REC</span>
+      </header>
+
+      <section class="hero">
+        <div>
+          <p class="sub">SIDE A — VIBE SEARCH SYSTEM Ver.2.0</p>
+          <h1>きぶんを にゅうりょく<br />してください<span class="cursor">_</span></h1>
+          <form id="form">
+            <span>&gt;</span>
+            <input id="query" placeholder="なつの うみべ" />
+            <button>[ ENTER ]</button>
+          </form>
+          <div id="presets" class="presets"></div>
+        </div>
+        <div class="cassette">
+          <div class="tape-label">HERZ MIX vol.1<br /><small>C-60 · <span id="count">200000</span> SONGS</small></div>
+          <div class="reels"><span class="reel"></span><span class="window"></span><span class="reel"></span></div>
+        </div>
+      </section>
+
+      <section>
+        <p class="sub">TRACK LIST</p>
+        <ol id="results" class="tracks"></ol>
+      </section>
+    </div>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

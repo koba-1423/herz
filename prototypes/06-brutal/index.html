@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 06 Brutal</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-[#f4f0e6] text-black">
+    <div class="overflow-hidden border-b-4 border-black bg-black py-2 text-[#e8ff3a]">
+      <div class="marquee font-grotesk text-sm font-bold whitespace-nowrap">
+        NO ARTIST NAMES ✺ NO GENRES ✺ JUST VIBES ✺ アーティスト名もジャンルもいらない ✺ NO ARTIST NAMES ✺ NO GENRES ✺ JUST VIBES ✺ アーティスト名もジャンルもいらない ✺
+      </div>
+    </div>
+    <header class="flex items-stretch border-b-4 border-black">
+      <span class="font-grotesk border-r-4 border-black px-6 py-4 text-3xl font-bold">HERZ</span>
+      <nav class="font-grotesk flex flex-1 items-center justify-end gap-6 px-6 text-sm font-bold">
+        <a href="#">SEARCH</a><a href="#">TASTE</a><a href="#" class="bg-black px-3 py-1 text-[#e8ff3a]">β</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="grid border-b-4 border-black md:grid-cols-[1fr_380px]">
+        <div class="border-r-4 border-black p-8">
+          <h1 class="text-[clamp(3rem,8vw,7rem)] leading-[1.2] font-black tracking-tighter">気分を<br /><span class="bg-[#e8ff3a] px-2 leading-none">叫べ。</span><br />曲が来る。</h1>
+        </div>
+        <div class="flex flex-col justify-between bg-[#ff5c39] p-8">
+          <p class="font-grotesk text-sm font-bold">STEP 01 — 気分を書く<br />STEP 02 — 近い音が並ぶ<br />STEP 03 — 30秒で試聴</p>
+          <div class="font-grotesk text-8xl font-bold">20<span class="text-3xl">万曲</span></div>
+        </div>
+      </section>
+
+      <form id="form" class="flex border-b-4 border-black">
+        <input id="query" class="w-full bg-white px-8 py-6 text-2xl font-bold outline-none placeholder:text-black/30" placeholder="ゴリゴリのメタル" />
+        <button class="font-grotesk border-l-4 border-black bg-[#e8ff3a] px-10 text-xl font-bold hover:bg-black hover:text-[#e8ff3a]">GO</button>
+      </form>
+      <div id="presets" class="font-grotesk flex flex-wrap border-b-4 border-black"></div>
+
+      <section id="results" class="grid md:grid-cols-4"></section>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
