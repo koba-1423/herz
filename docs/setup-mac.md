@@ -31,7 +31,7 @@ PG=/Applications/Postgres.app/Contents/Versions/17/bin
 $PG/psql -d postgres -c "CREATE ROLE herz LOGIN PASSWORD 'herz'"
 $PG/psql -d postgres -c "CREATE DATABASE herz OWNER herz"
 $PG/psql -d herz -c "CREATE EXTENSION vector"
-$PG/pg_restore -U herz -d herz --no-owner herz-migration/herz.dump
+$PG/pg_restore -U herz -d herz --no-owner --no-comments ~/Desktop/herz-migration/herz.dump   # 4分ほど
 ```
 
 テスト用のDB（`TEST_POSTGRES_URL` で使う `herz_test`）も同じように作れる。
