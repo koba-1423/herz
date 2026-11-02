@@ -2,15 +2,14 @@
 
 const KEY_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
 
-const PRESETS = [
-  "雨の日に聴きたい切ないピアノ",
-  "夜のドライブに合うシティポップ",
-  "疾走感のあるロック",
-  "チルいローファイ",
-  "透明感のある女性ボーカル",
-  "ゴリゴリのメタル",
-  "energetic dance music with big synth drops",
-  "dramatic strings like a film score",
+// 気分のタイル。選ぶと検索文が入り、背景がその色になる
+const MOODS = [
+  { ja: "雨の午後", en: "Rainy afternoon", desc: "窓の外の雨音に溶けるような、静かなピアノとやわらかな弦。", query: "雨の日に聴きたい静かなピアノ", colors: ["#5b7ea4", "#2f4a6b", "#1c2838"] },
+  { ja: "真夜中の街", en: "Midnight city", desc: "ネオンが滲む高速道路を走る、シンセとベースのグルーヴ。", query: "夜のドライブに合うシティポップ", colors: ["#9b3fd1", "#ff4f8b", "#120b2b"] },
+  { ja: "夏の海辺", en: "Summer shore", desc: "まぶしい光と潮風。軽やかなギターと跳ねるリズム。", query: "夏の海辺で聴きたい明るいギターの曲", colors: ["#e8963a", "#2fb3ad", "#123f52"] },
+  { ja: "森の朝", en: "Forest morning", desc: "鳥の声と木漏れ日。アコースティックで澄んだ響き。", query: "朝のカフェ、アコースティック", colors: ["#7fa95c", "#3f7d4f", "#16301f"] },
+  { ja: "燃える夜", en: "Burning night", desc: "全身で浴びたい、歪んだギターと叩きつけるドラム。", query: "疾走感のある激しいロック", colors: ["#e8402f", "#c9681a", "#2a0a06"] },
+  { ja: "星を見上げて", en: "Under the stars", desc: "広がっていくアンビエントと、遠くで鳴るシンセ。", query: "宇宙を感じる幻想的なアンビエント", colors: ["#5a67e0", "#8a76d6", "#0a0c24"] },
 ];
 
 const RANGE_FIELDS = ["tempo_bpm", "energy", "acousticness"];
@@ -31,7 +30,10 @@ const elements = {
   searchForm: $("#search-form"),
   text: $("#text"),
   textHint: $("#text-hint"),
-  presets: $("#presets"),
+  moods: $("#moods"),
+  moodEn: $("#mood-en"),
+  moodTitle: $("#mood-title"),
+  moodDesc: $("#mood-desc"),
   key: $("#key"),
   filterCount: $("#filter-count"),
   resetFilters: $("#reset-filters"),
@@ -67,6 +69,7 @@ const state = {
   stats: null,
   playingId: null,
   seed: null, // 「この曲みたいな曲」の基準にしている曲
+  mood: null, // 選んでいる気分のタイル（自分で書いた検索文なら null）
   favorites: loadFavorites(), // [{ id, title, artist, artwork_url }]
 };
 
@@ -168,13 +171,13 @@ async function refreshStats() {
 
   const { total_tracks, embedded_tracks, text_search_available } = state.stats;
   elements.stats.textContent = text_search_available
-    ? `ライブラリ ${total_tracks}曲 ・ 雰囲気検索の対象 ${embedded_tracks}曲`
-    : `ライブラリ ${total_tracks}曲`;
+    ? `${embedded_tracks.toLocaleString()}曲から探せます`
+    : `ライブラリ ${total_tracks.toLocaleString()}曲`;
 
   if (!text_search_available) {
     elements.text.disabled = true;
     elements.text.placeholder = "自然文検索は無効です";
-    elements.presets.hidden = true;
+    elements.moods.hidden = true;
     elements.textHint.textContent =
       "自然文検索 (CLAP) が無効になっています。`uv sync --extra clap` で有効にできます。条件での絞り込みは使えます。";
     elements.textHint.classList.add("warning");
@@ -183,6 +186,55 @@ async function refreshStats() {
   const missing = total_tracks - embedded_tracks;
   elements.backfill.hidden = !(text_search_available && missing > 0);
   elements.backfillNote.textContent = `${missing}曲がまだ雰囲気検索の対象になっていません（埋め込み未計算）。`;
+}
+
+// ---- mood (見出しと背景の色) ----
+
+function paint([a, b, c]) {
+  const root = document.documentElement.style;
+  root.setProperty("--a", a);
+  root.setProperty("--b", b);
+  root.setProperty("--c", c);
+}
+
+function setHeading(en, title, desc) {
+  elements.moodEn.textContent = en;
+  elements.moodTitle.textContent = title;
+  // 自分で書いた長い検索文は、見出しを小さめにする
+  elements.moodTitle.classList.toggle("small", title.length > 10);
+  elements.moodDesc.textContent = desc;
+}
+
+function chooseMood(mood) {
+  state.mood = mood;
+  elements.text.value = mood.query;
+  setHeading(mood.en, mood.ja, mood.desc);
+  paint(mood.colors);
+  syncMoodButtons();
+  runSearch();
+}
+
+function syncMoodButtons() {
+  for (const button of elements.moods.children) {
+    button.setAttribute("aria-pressed", String(state.mood?.ja === button.textContent));
+  }
+}
+
+// 気分のタイル以外で検索したときは、上位の曲の色で背景を塗る
+function paintFromTracks(tracks) {
+  if (!tracks.length) return;
+  const [a, b] = vibeColors(tracks[0]);
+  paint([a, vibeColors(tracks[Math.min(2, tracks.length - 1)])[1] ?? b, "#10141f"]);
+}
+
+// ジャケット画像の代わりに、曲の特徴から決まる色を返す（キー→色相、エネルギー→彩度、アコースティック→明るさ）
+function vibeColors(track) {
+  const features = track.features ?? {};
+  const key = features.key ?? -1;
+  const hue = (key >= 0 ? key * 30 : 210) + (features.mode === 0 ? 200 : 0);
+  const saturation = 35 + Math.round((features.energy ?? 0.5) * 55);
+  const lightness = 35 + Math.round((features.acousticness ?? 0.5) * 30);
+  return [`hsl(${hue % 360} ${saturation}% ${lightness}%)`, `hsl(${(hue + 40) % 360} ${saturation}% ${lightness - 15}%)`];
 }
 
 // ---- search ----
@@ -272,10 +324,22 @@ async function runSearch() {
     const english = headers.get("x-herz-query");
     const interpreted = english ? decodeURIComponent(english) : null;
     renderResults(tracks, query, interpreted !== query.text ? interpreted : null);
+    describeSearch(query, interpreted, tracks);
   } catch (error) {
     elements.results.replaceChildren();
     setStatus(elements.searchStatus, `検索に失敗しました: ${error.message}`, { error: true });
   }
+}
+
+function describeSearch(query, interpreted, tracks) {
+  if (state.seed) {
+    setHeading("Similar to", "この曲に似た曲", `「${state.seed.title}」（${state.seed.artist}）と雰囲気が近い順に並べています。`);
+  } else if (!state.mood && query.text) {
+    setHeading("Your words", `「${query.text}」`, interpreted ? `“${interpreted}” として探しました。` : "あなたの言葉に近い順に並べています。");
+  } else if (!state.mood) {
+    setHeading("Library", "ライブラリの曲", "気分を選ぶか、言葉で書くと、雰囲気の近い順に並びます。");
+  }
+  if (state.seed || !state.mood) paintFromTracks(tracks);
 }
 
 function renderResults(tracks, query, interpreted = null) {
@@ -286,7 +350,7 @@ function renderResults(tracks, query, interpreted = null) {
       el("li", {
         className: "empty",
         text: libraryEmpty
-          ? "まだ曲がありません。右の「ライブラリに曲を追加」から取り込んでください。"
+          ? "まだ曲がありません。ページ下の「ライブラリに曲を追加」から取り込んでください。"
           : "条件に合う曲が見つかりませんでした。条件をゆるめてみてください。",
       }),
     );
@@ -299,12 +363,14 @@ function renderResults(tracks, query, interpreted = null) {
     elements.searchStatus,
     interpreted ? `${count}（${ordering}）・「${interpreted}」として検索` : `${count}（${ordering}）`,
   );
-  elements.results.replaceChildren(...tracks.map((track) => renderTrack(track)));
+  elements.results.replaceChildren(...tracks.map((track, index) => renderTrack(track, index)));
   syncPlayingState();
 }
 
 function searchSimilarTo(track) {
   state.seed = { id: track.id, title: track.title, artist: track.artist };
+  state.mood = null;
+  syncMoodButtons();
   elements.seedLabel.textContent = `「${track.title}」（${track.artist}）に雰囲気が近い曲`;
   elements.seed.hidden = false;
   showTab("search");
@@ -324,19 +390,7 @@ function formatKey(features) {
   return `${KEY_NAMES[features.key]} ${mode}`.trim();
 }
 
-function meter(label, value) {
-  if (value === null || value === undefined) return null;
-  const percent = Math.round(value * 100);
-  const bar = el("span", { className: "meter-bar", "aria-hidden": "true" }, el("span"));
-  bar.firstChild.style.width = `${percent}%`;
-  return el("span", { className: "meter", title: `${label} ${value.toFixed(2)}` }, [
-    `${label}`,
-    bar,
-    el("span", { className: "visually-hidden", text: `${percent}%` }),
-  ]);
-}
-
-function renderTrack(track) {
+function renderTrack(track, index = 0) {
   const { features } = track;
   const playable = Boolean(track.preview_url);
 
@@ -347,6 +401,7 @@ function renderTrack(track) {
     disabled: !playable,
   });
   play.innerHTML = ICON_PLAY;
+  play.style.setProperty("--dot", vibeColors(track)[0]);
   play.addEventListener("click", () => togglePlay(track));
 
   const tags = [
@@ -358,9 +413,9 @@ function renderTrack(track) {
   const score =
     track.similarity === null || track.similarity === undefined
       ? null
-      : el("div", { className: "score", title: "文と曲のコサイン類似度" }, [
+      : el("div", { className: "score", title: "検索した雰囲気と曲のコサイン類似度" }, [
           el("strong", { text: track.similarity.toFixed(2) }),
-          "一致度",
+          "近さ",
         ]);
 
   const favorite = el("button", {
@@ -376,7 +431,7 @@ function renderTrack(track) {
   const similar = el("button", { type: "button", className: "link-button", text: "似た曲" });
   similar.addEventListener("click", () => searchSimilarTo(track));
 
-  return el("li", { className: "track", "data-id": track.id }, [
+  const item = el("li", { className: "track", "data-id": track.id }, [
     play,
     el("div", { className: "meta" }, [
       el("div", { className: "track-title", text: track.title }),
@@ -387,19 +442,20 @@ function renderTrack(track) {
       favorite,
       similar,
       ...tags,
-      meter("エネルギー", features.energy),
-      meter("アコースティック", features.acousticness),
       track.external_url
         ? el("a", {
             className: "external",
             href: track.external_url,
             target: "_blank",
             rel: "noopener noreferrer",
-            text: "Apple Musicで開く ↗",
+            text: "Apple Music ↗",
+            title: "Apple Musicで開く",
           })
         : null,
     ]),
   ]);
+  item.style.setProperty("--i", String(index));
+  return item;
 }
 
 // ---- preview player ----
@@ -660,7 +716,7 @@ function renderProfile(profile) {
   }
   elements.profileFeatures.replaceChildren(...features);
 
-  elements.recommendations.replaceChildren(...profile.recommendations.map((track) => renderTrack(track)));
+  elements.recommendations.replaceChildren(...profile.recommendations.map((track, index) => renderTrack(track, index)));
   elements.profile.hidden = false;
   syncPlayingState();
 }
@@ -672,17 +728,20 @@ function init() {
     elements.key.append(el("option", { value: String(index), text: name }));
   }
 
-  for (const preset of PRESETS) {
-    const chip = el("button", { type: "button", className: "chip", text: preset });
-    chip.addEventListener("click", () => {
-      elements.text.value = preset;
-      runSearch();
-    });
-    elements.presets.append(chip);
+  for (const mood of MOODS) {
+    const tile = el("button", { type: "button", className: "mood", text: mood.ja, "aria-pressed": "false" });
+    tile.style.background = `linear-gradient(135deg, ${mood.colors[0]}, ${mood.colors[1]})`;
+    tile.addEventListener("click", () => chooseMood(mood));
+    elements.moods.append(tile);
   }
 
   elements.searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
+    // 自分で書き換えた検索文は、気分のタイルとは別の検索として扱う
+    if (state.mood && elements.text.value.trim() !== state.mood.query) {
+      state.mood = null;
+      syncMoodButtons();
+    }
     runSearch();
   });
   elements.searchForm.addEventListener("input", updateFilterCount);
@@ -708,7 +767,7 @@ function init() {
     elements.player.addEventListener(eventName, syncPlayingState);
   }
 
-  refreshStats().then(runSearch);
+  refreshStats().then(() => chooseMood(MOODS[0]));
 }
 
 init();

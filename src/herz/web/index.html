@@ -4,158 +4,181 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Herz — 曲の雰囲気で探す</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap"
+    />
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <header class="masthead">
-      <div class="masthead-inner">
-        <div>
-          <h1 class="brand">Herz</h1>
-          <p class="tagline">アーティスト名ではなく、曲の雰囲気で探す</p>
-        </div>
+    <div class="field" id="field" aria-hidden="true"></div>
+
+    <div class="page">
+      <header class="masthead">
+        <a class="brand" href="/">Herz</a>
+        <nav class="tabs" role="tablist" aria-label="表示の切り替え">
+          <button type="button" role="tab" class="tab" id="tab-search" aria-controls="panel-search" aria-selected="true">雰囲気で探す</button>
+          <button type="button" role="tab" class="tab" id="tab-taste" aria-controls="panel-taste" aria-selected="false">
+            あなたの好み <span class="tab-count" id="favorite-count"></span>
+          </button>
+        </nav>
         <p class="stats" id="stats" aria-live="polite"></p>
-      </div>
-    </header>
+      </header>
 
-    <main class="layout">
-      <div class="main-column">
-      <nav class="tabs" role="tablist" aria-label="表示の切り替え">
-        <button type="button" role="tab" class="tab" id="tab-search" aria-controls="panel-search" aria-selected="true">雰囲気で探す</button>
-        <button type="button" role="tab" class="tab" id="tab-taste" aria-controls="panel-taste" aria-selected="false">
-          あなたの好み <span class="tab-count" id="favorite-count"></span>
-        </button>
-      </nav>
+      <main>
+        <section class="search" id="panel-search" role="tabpanel" aria-labelledby="tab-search">
+          <div class="mood-column">
+            <p class="mood-en" id="mood-en">Rainy afternoon</p>
+            <h1 class="mood-title" id="mood-title">雨の午後</h1>
+            <p class="mood-desc" id="mood-desc">窓の外の雨音に溶けるような、静かなピアノとやわらかな弦。</p>
 
-      <section class="search" id="panel-search" role="tabpanel" aria-labelledby="tab-search">
-        <form id="search-form" class="search-form">
-          <label for="text" class="field-label">どんな雰囲気の曲？</label>
-          <div class="query-row">
-            <input
-              id="text"
-              name="text"
-              type="search"
-              placeholder="雨の日に聴きたい切ないピアノ"
-              autocomplete="off"
-              maxlength="1000"
-            />
-            <button type="submit" class="button primary">探す</button>
+            <div class="moods" id="moods" aria-label="気分から選ぶ"></div>
+
+            <form id="search-form" class="search-form">
+              <label for="text" class="visually-hidden">どんな雰囲気の曲？</label>
+              <div class="pill">
+                <input
+                  id="text"
+                  name="text"
+                  type="search"
+                  placeholder="自分の言葉で気分を書く、または曲のURLを貼る"
+                  autocomplete="off"
+                  maxlength="1000"
+                />
+                <button type="submit" class="button solid">探す</button>
+              </div>
+              <p class="hint" id="text-hint">
+                日本語でも英語でもOK。Apple Music・Spotify・YouTube の曲のURLを貼ると、その曲に似た曲を探します。
+              </p>
+              <div class="seed" id="seed" hidden>
+                <span id="seed-label"></span>
+                <button type="button" class="seed-clear" id="seed-clear" aria-label="この曲を基準にした検索をやめる">×</button>
+              </div>
+
+              <details class="filters glass" id="filters">
+                <summary>条件で絞り込む <span class="filter-count" id="filter-count"></span></summary>
+                <div class="filter-grid">
+                  <fieldset class="range">
+                    <legend>テンポ (BPM)</legend>
+                    <input name="tempo_bpm_min" type="number" min="30" max="250" step="1" placeholder="下限" aria-label="BPMの下限" />
+                    <span aria-hidden="true">〜</span>
+                    <input name="tempo_bpm_max" type="number" min="30" max="250" step="1" placeholder="上限" aria-label="BPMの上限" />
+                  </fieldset>
+                  <fieldset class="range">
+                    <legend>エネルギー (0〜1)</legend>
+                    <input name="energy_min" type="number" min="0" max="1" step="0.05" placeholder="下限" aria-label="エネルギーの下限" />
+                    <span aria-hidden="true">〜</span>
+                    <input name="energy_max" type="number" min="0" max="1" step="0.05" placeholder="上限" aria-label="エネルギーの上限" />
+                  </fieldset>
+                  <fieldset class="range">
+                    <legend>アコースティック度 (0〜1)</legend>
+                    <input name="acousticness_min" type="number" min="0" max="1" step="0.05" placeholder="下限" aria-label="アコースティック度の下限" />
+                    <span aria-hidden="true">〜</span>
+                    <input name="acousticness_max" type="number" min="0" max="1" step="0.05" placeholder="上限" aria-label="アコースティック度の上限" />
+                  </fieldset>
+                  <fieldset class="segmented">
+                    <legend>長調 / 短調</legend>
+                    <label><input type="radio" name="mode" value="" checked /><span>指定なし</span></label>
+                    <label><input type="radio" name="mode" value="1" /><span>メジャー</span></label>
+                    <label><input type="radio" name="mode" value="0" /><span>マイナー</span></label>
+                  </fieldset>
+                  <label class="stacked">
+                    <span>キー</span>
+                    <select name="key" id="key"><option value="">指定なし</option></select>
+                  </label>
+                  <label class="stacked">
+                    <span>ジャンル（カンマ区切り）</span>
+                    <input name="genres" type="text" placeholder="J-Pop, ロック" autocomplete="off" />
+                  </label>
+                </div>
+                <button type="button" class="button ghost" id="reset-filters">条件をクリア</button>
+              </details>
+            </form>
           </div>
-          <p class="hint" id="text-hint">
-            雰囲気を言葉で書くと、近い順に並びます（日本語でも英語でもOK）。Apple Music・Spotify・YouTube の曲のURLを貼ると、その曲に似た曲を探します。
+
+          <div class="results-column">
+            <div class="status" id="search-status" role="status" aria-live="polite"></div>
+            <ol class="results" id="results"></ol>
+          </div>
+        </section>
+
+        <section class="taste" id="panel-taste" role="tabpanel" aria-labelledby="tab-taste" hidden>
+          <div class="taste-intro">
+            <p class="mood-en">Your taste</p>
+            <h1 class="mood-title">あなたの好み</h1>
+            <p class="mood-desc">好きな曲を3曲以上選ぶと、音の傾向を言葉にして、別のアーティストの近い曲を探します。</p>
+          </div>
+
+          <div class="taste-grid">
+            <div class="glass card">
+              <form id="catalog-form">
+                <label for="catalog-term" class="card-title">好きな曲を追加</label>
+                <div class="pill">
+                  <input id="catalog-term" type="search" placeholder="曲名・アーティスト名、または曲のURL" autocomplete="off" maxlength="1000" />
+                  <button type="submit" class="button solid">探す</button>
+                </div>
+              </form>
+              <div class="status" id="catalog-status" role="status" aria-live="polite"></div>
+              <ul class="song-list" id="catalog"></ul>
+            </div>
+
+            <div class="glass card">
+              <div class="favorites-head">
+                <h2 class="card-title">好きな曲 <span class="muted" id="favorites-summary"></span></h2>
+                <button type="button" class="button solid" id="analyze-button" disabled>好みを分析する</button>
+              </div>
+              <ul class="song-list" id="favorites"></ul>
+            </div>
+          </div>
+
+          <div class="status" id="taste-status" role="status" aria-live="polite"></div>
+          <div class="profile" id="profile" hidden>
+            <div class="taste-grid">
+              <section class="glass card">
+                <h2 class="card-title">あなたの好みを表す言葉</h2>
+                <ul class="words" id="profile-words"></ul>
+                <p class="note" id="profile-avoided"></p>
+              </section>
+              <section class="glass card">
+                <h2 class="card-title">音の傾向 <span class="muted">（ライブラリ全体の中での位置）</span></h2>
+                <ul class="insights" id="profile-features"></ul>
+              </section>
+            </div>
+            <h2 class="section-title">好みに近い、別のアーティストの曲</h2>
+            <ol class="results" id="recommendations"></ol>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <details class="glass admin">
+          <summary>ライブラリに曲を追加（管理用）</summary>
+          <p class="note">
+            iTunesでキーワード検索した曲の30秒プレビューを解析して、ライブラリに加えます。検索できるのは取り込んだ曲だけです。
           </p>
-          <div class="presets" id="presets" aria-label="入力例"></div>
-          <div class="seed" id="seed" hidden>
-            <span id="seed-label"></span>
-            <button type="button" class="button ghost" id="seed-clear" aria-label="この曲を基準にした検索をやめる">×</button>
-          </div>
-
-          <details class="filters" id="filters">
-            <summary>条件で絞り込む <span class="filter-count" id="filter-count"></span></summary>
-            <div class="filter-grid">
-              <fieldset class="range">
-                <legend>テンポ (BPM)</legend>
-                <input name="tempo_bpm_min" type="number" min="30" max="250" step="1" placeholder="下限" aria-label="BPMの下限" />
-                <span aria-hidden="true">〜</span>
-                <input name="tempo_bpm_max" type="number" min="30" max="250" step="1" placeholder="上限" aria-label="BPMの上限" />
-              </fieldset>
-              <fieldset class="range">
-                <legend>エネルギー (0〜1)</legend>
-                <input name="energy_min" type="number" min="0" max="1" step="0.05" placeholder="下限" aria-label="エネルギーの下限" />
-                <span aria-hidden="true">〜</span>
-                <input name="energy_max" type="number" min="0" max="1" step="0.05" placeholder="上限" aria-label="エネルギーの上限" />
-              </fieldset>
-              <fieldset class="range">
-                <legend>アコースティック度 (0〜1)</legend>
-                <input name="acousticness_min" type="number" min="0" max="1" step="0.05" placeholder="下限" aria-label="アコースティック度の下限" />
-                <span aria-hidden="true">〜</span>
-                <input name="acousticness_max" type="number" min="0" max="1" step="0.05" placeholder="上限" aria-label="アコースティック度の上限" />
-              </fieldset>
-              <fieldset class="segmented">
-                <legend>長調 / 短調</legend>
-                <label><input type="radio" name="mode" value="" checked /><span>指定なし</span></label>
-                <label><input type="radio" name="mode" value="1" /><span>メジャー</span></label>
-                <label><input type="radio" name="mode" value="0" /><span>マイナー</span></label>
-              </fieldset>
-              <label class="stacked">
-                <span>キー</span>
-                <select name="key" id="key"><option value="">指定なし</option></select>
-              </label>
-              <label class="stacked">
-                <span>ジャンル（カンマ区切り）</span>
-                <input name="genres" type="text" placeholder="J-Pop, ロック" autocomplete="off" />
-              </label>
-            </div>
-            <button type="button" class="button ghost" id="reset-filters">条件をクリア</button>
-          </details>
-        </form>
-
-        <div class="status" id="search-status" role="status" aria-live="polite"></div>
-        <ol class="results" id="results"></ol>
-      </section>
-
-      <section class="taste" id="panel-taste" role="tabpanel" aria-labelledby="tab-taste" hidden>
-        <div class="search-form">
-          <form id="catalog-form">
-            <label for="catalog-term" class="field-label">好きな曲を追加</label>
-            <div class="query-row">
-              <input id="catalog-term" type="search" placeholder="曲名・アーティスト名、または Apple Music / Spotify / YouTube のURL" autocomplete="off" maxlength="1000" />
-              <button type="submit" class="button">探す</button>
-            </div>
-            <p class="hint">曲名のほか、Apple Music・Spotify・YouTube の曲のURLを貼っても探せます。3曲以上追加すると、あなたの好みの傾向を分析できます。</p>
+          <form id="ingest-form" class="ingest-form">
+            <label class="stacked">
+              <span>キーワード（ジャンル・曲名など）</span>
+              <input name="term" type="text" required placeholder="city pop" autocomplete="off" />
+            </label>
+            <label class="stacked">
+              <span>取り込む曲数</span>
+              <input name="limit" type="number" min="1" max="50" value="10" required />
+            </label>
+            <button type="submit" class="button solid">取り込む</button>
           </form>
-          <div class="status" id="catalog-status" role="status" aria-live="polite"></div>
-          <ul class="catalog" id="catalog"></ul>
-
-          <div class="favorites-head">
-            <h2>好きな曲 <span class="muted" id="favorites-summary"></span></h2>
-            <button type="button" class="button primary" id="analyze-button" disabled>好みを分析する</button>
+          <div class="status" id="ingest-status" role="status" aria-live="polite"></div>
+          <div class="backfill" id="backfill" hidden>
+            <p class="note" id="backfill-note"></p>
+            <button type="button" class="button" id="backfill-button">埋め込みを計算する</button>
           </div>
-          <ul class="favorites" id="favorites"></ul>
-        </div>
-
-        <div class="status" id="taste-status" role="status" aria-live="polite"></div>
-        <div class="profile" id="profile" hidden>
-          <section class="profile-card">
-            <h2>あなたの好みを表す言葉</h2>
-            <ul class="words" id="profile-words"></ul>
-            <p class="note" id="profile-avoided"></p>
-          </section>
-          <section class="profile-card">
-            <h2>音の傾向 <span class="muted">（ライブラリ全体の中での位置）</span></h2>
-            <ul class="insights" id="profile-features"></ul>
-          </section>
-          <h2 class="section-title">好みに近い、別のアーティストの曲</h2>
-          <ol class="results" id="recommendations"></ol>
-        </div>
-      </section>
-      </div>
-
-      <aside class="library" aria-labelledby="library-heading">
-        <h2 id="library-heading">ライブラリに曲を追加</h2>
-        <p class="note">
-          iTunesでキーワード検索した曲の30秒プレビューを取り込み、テンポや雰囲気を解析します。
-          検索できるのは取り込んだ曲だけです。
-        </p>
-        <form id="ingest-form" class="ingest-form">
-          <label class="stacked">
-            <span>キーワード（ジャンル・曲名など）</span>
-            <input name="term" type="text" required placeholder="city pop" autocomplete="off" />
-          </label>
-          <label class="stacked">
-            <span>取り込む曲数</span>
-            <input name="limit" type="number" min="1" max="50" value="10" required />
-          </label>
-          <button type="submit" class="button primary">取り込む</button>
-        </form>
-        <div class="status" id="ingest-status" role="status" aria-live="polite"></div>
-
-        <div class="backfill" id="backfill" hidden>
-          <p class="note" id="backfill-note"></p>
-          <button type="button" class="button" id="backfill-button">埋め込みを計算する</button>
-        </div>
-      </aside>
-    </main>
+        </details>
+        <p class="credit">楽曲の情報と試聴は iTunes の提供です（provided courtesy of iTunes）。</p>
+      </footer>
+    </div>
 
     <audio id="player" preload="none"></audio>
   </body>
