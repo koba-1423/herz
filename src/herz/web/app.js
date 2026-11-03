@@ -40,6 +40,7 @@ const elements = {
   resetSearches: $("#reset-searches"),
   backdrop: $("#backdrop"),
   backdropArt: $("#backdrop-art"),
+  backdropCover: $("#backdrop-cover"),
   moodTitle: $("#mood-title"),
   moodDesc: $("#mood-desc"),
   key: $("#key"),
@@ -229,12 +230,16 @@ function paint([a, b]) {
 function showBackdrop({ colors = null, artwork = null }) {
   if (colors) paint(colors);
   elements.backdrop.classList.toggle("art", Boolean(artwork));
-  if (artwork) elements.backdropArt.style.backgroundImage = `url("${largeArtwork(artwork)}")`;
+  if (artwork) {
+    const image = `url("${largeArtwork(artwork)}")`;
+    elements.backdropArt.style.backgroundImage = image;
+    elements.backdropCover.style.backgroundImage = image;
+  }
 }
 
 // iTunes のジャケット画像は URL の寸法を書き換えると大きい画像が取れる
 function largeArtwork(url) {
-  return url.replace(/\/\d+x\d+bb\./, "/600x600bb.");
+  return url.replace(/\/\d+x\d+bb\./, "/1200x1200bb.");
 }
 
 function setHeading(title, desc) {

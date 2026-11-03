@@ -53,50 +53,75 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* 背景。雰囲気で探すときはその色をうすく、曲から探すときはジャケット写真をぼかして敷く */
+/* 背景は探し方ごとにがらっと変える。
+   雰囲気で探すときは気分の色で全面を塗り、曲から探すときはジャケット写真を大きく敷く */
 .backdrop {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
-  background: var(--bg);
+  background: #1d1d1f;
 }
 
 .backdrop-wash,
-.backdrop-art {
+.backdrop-art,
+.backdrop-cover {
   position: absolute;
-  transition: opacity 0.8s ease;
+  transition: opacity 0.9s ease;
 }
 
 .backdrop-wash {
   inset: 0;
   background:
-    radial-gradient(60% 55% at 10% 0%, color-mix(in srgb, var(--a) 26%, transparent), transparent 70%),
-    radial-gradient(50% 50% at 100% 20%, color-mix(in srgb, var(--b) 18%, transparent), transparent 70%);
+    radial-gradient(70% 70% at 0% 0%, var(--a), transparent 75%),
+    radial-gradient(70% 80% at 100% 100%, var(--b), transparent 75%),
+    color-mix(in srgb, var(--a) 50%, var(--b));
 }
 
+/* ジャケット写真をぼかして全面に */
 .backdrop-art {
-  inset: -120px;
+  inset: -60px;
   background-position: center;
   background-size: cover;
-  filter: blur(90px) saturate(1.1);
+  filter: blur(40px) saturate(1.2) brightness(0.75);
   opacity: 0;
+}
+
+/* その上に、くっきりしたジャケット写真を左に大きく */
+.backdrop-cover {
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: min(68vw, 100vh);
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  -webkit-mask-image: linear-gradient(to right, #000 55%, transparent);
+  mask-image: linear-gradient(to right, #000 55%, transparent);
 }
 
 .backdrop.art .backdrop-wash {
   opacity: 0;
 }
 
-.backdrop.art .backdrop-art {
-  opacity: 0.35;
+.backdrop.art .backdrop-art,
+.backdrop.art .backdrop-cover {
+  opacity: 1;
 }
 
-/* 原色に近いジャケットでも文字が読めるよう、写真の上にうすいグレーを重ねる */
+/* 白い文字が読めるよう、左（文字がのる側）を中心にうすく暗くする */
 .backdrop::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: rgb(245 245 247 / 0.4);
+  background: linear-gradient(to right, rgb(0 0 0 / 0.25), transparent 60%);
+  transition: background 0.9s ease;
+}
+
+.backdrop.art::after {
+  background:
+    linear-gradient(to right, rgb(0 0 0 / 0.55), rgb(0 0 0 / 0.15) 55%, transparent),
+    linear-gradient(to bottom, rgb(0 0 0 / 0.3), transparent 30%);
 }
 
 button,
@@ -653,7 +678,8 @@ legend,
 
 .now-title {
   margin: 0;
-  color: var(--a);
+  /* 白いパネルの上でも読めるよう、気分の色を少し暗くする */
+  color: color-mix(in srgb, var(--a) 70%, #000);
   font-size: 22px;
   font-weight: 700;
   overflow-wrap: anywhere;
@@ -1080,4 +1106,94 @@ legend,
   .track {
     animation: none;
   }
+}
+
+/* ---- 色や写真の背景の上に直接のる部分は白い文字にする ---- */
+
+.masthead,
+.mood-column,
+.taste-intro,
+.footer {
+  --text: #fff;
+  --muted: rgb(255 255 255 / 0.78);
+  --faint: rgb(255 255 255 / 0.62);
+  --link: #fff;
+  color: var(--text);
+  text-shadow: 0 1px 12px rgb(0 0 0 / 0.25);
+}
+
+.tab[aria-selected="true"] {
+  border-bottom-color: #fff;
+}
+
+.mood[aria-pressed="true"] {
+  color: #fff;
+}
+
+.mood[aria-pressed="true"] .dot {
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.kind {
+  background: rgb(255 255 255 / 0.18);
+}
+
+.mood-action:hover {
+  background: rgb(255 255 255 / 0.18);
+}
+
+.mood-column .underline {
+  border-bottom-color: #fff;
+}
+
+.mood-column .underline input::placeholder {
+  color: rgb(255 255 255 / 0.55);
+}
+
+.mood-column .text-button,
+.reset-searches {
+  color: #fff;
+}
+
+.kind-switch {
+  background: rgb(255 255 255 / 0.18);
+}
+
+.kind-switch input:checked + span {
+  color: #1d1d1f;
+  text-shadow: none;
+}
+
+.seed {
+  background: rgb(255 255 255 / 0.9);
+  color: #1d1d1f;
+  text-shadow: none;
+}
+
+.filters input[type="number"],
+.filters input[type="text"],
+.filters select,
+.ingest-form input,
+.rename {
+  color: #1d1d1f;
+  text-shadow: none;
+}
+
+.segmented span {
+  border-color: rgb(255 255 255 / 0.5);
+}
+
+.segmented input:checked + span {
+  border-color: #fff;
+  background: #fff;
+  color: #1d1d1f;
+  text-shadow: none;
+}
+
+.footer {
+  border-top-color: rgb(255 255 255 / 0.25);
+}
+
+.footer .button {
+  text-shadow: none;
 }
