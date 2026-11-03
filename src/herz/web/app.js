@@ -2,19 +2,22 @@
 
 const KEY_NAMES = ["C", "C♯", "D", "E♭", "E", "F", "F♯", "G", "A♭", "A", "B♭", "B"];
 
-// 気分のタイル。選ぶと検索文が入り、背景がその色になる
+// 最初から並べておく気分。選ぶと検索文が入り、上の線がその色になる
 const MOODS = [
-  { ja: "雨の午後", en: "Rainy afternoon", desc: "窓の外の雨音に溶けるような、静かなピアノとやわらかな弦。", query: "雨の日に聴きたい静かなピアノ", colors: ["#5b7ea4", "#2f4a6b", "#1c2838"] },
-  { ja: "真夜中の街", en: "Midnight city", desc: "ネオンが滲む高速道路を走る、シンセとベースのグルーヴ。", query: "夜のドライブに合うシティポップ", colors: ["#9b3fd1", "#ff4f8b", "#120b2b"] },
-  { ja: "夏の海辺", en: "Summer shore", desc: "まぶしい光と潮風。軽やかなギターと跳ねるリズム。", query: "夏の海辺で聴きたい明るいギターの曲", colors: ["#e8963a", "#2fb3ad", "#123f52"] },
-  { ja: "森の朝", en: "Forest morning", desc: "鳥の声と木漏れ日。アコースティックで澄んだ響き。", query: "朝のカフェ、アコースティック", colors: ["#7fa95c", "#3f7d4f", "#16301f"] },
-  { ja: "燃える夜", en: "Burning night", desc: "全身で浴びたい、歪んだギターと叩きつけるドラム。", query: "疾走感のある激しいロック", colors: ["#e8402f", "#c9681a", "#2a0a06"] },
-  { ja: "星を見上げて", en: "Under the stars", desc: "広がっていくアンビエントと、遠くで鳴るシンセ。", query: "宇宙を感じる幻想的なアンビエント", colors: ["#5a67e0", "#8a76d6", "#0a0c24"] },
+  { ja: "雨の午後", desc: "窓の外の雨音に溶けるような、静かなピアノとやわらかな弦。", query: "雨の日に聴きたい静かなピアノ", colors: ["#5b7ea4", "#2f4a6b"] },
+  { ja: "真夜中の街", desc: "ネオンが滲む高速道路を走る、シンセとベースのグルーヴ。", query: "夜のドライブに合うシティポップ", colors: ["#9b3fd1", "#ff4f8b"] },
+  { ja: "夏の海辺", desc: "まぶしい光と潮風。軽やかなギターと跳ねるリズム。", query: "夏の海辺で聴きたい明るいギターの曲", colors: ["#e8963a", "#2fb3ad"] },
+  { ja: "森の朝", desc: "鳥の声と木漏れ日。アコースティックで澄んだ響き。", query: "朝のカフェ、アコースティック", colors: ["#7fa95c", "#3f7d4f"] },
+  { ja: "燃える夜", desc: "全身で浴びたい、歪んだギターと叩きつけるドラム。", query: "疾走感のある激しいロック", colors: ["#e8402f", "#c9681a"] },
+  { ja: "星を見上げて", desc: "広がっていくアンビエントと、遠くで鳴るシンセ。", query: "宇宙を感じる幻想的なアンビエント", colors: ["#5a67e0", "#8a76d6"] },
 ];
 
 const RANGE_FIELDS = ["tempo_bpm", "energy", "acousticness"];
 
 const FAVORITES_KEY = "herz.favorites";
+// 自分で書いた検索文を、気分として一覧に残す（このブラウザだけに保存）
+const MY_MOODS_KEY = "herz.moods";
+const MAX_MY_MOODS = 12;
 const MIN_FAVORITES_FOR_ANALYSIS = 3;
 
 const ICON_PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2.5v11l9-5.5z"/></svg>';
@@ -31,7 +34,6 @@ const elements = {
   text: $("#text"),
   textHint: $("#text-hint"),
   moods: $("#moods"),
-  moodEn: $("#mood-en"),
   moodTitle: $("#mood-title"),
   moodDesc: $("#mood-desc"),
   key: $("#key"),
@@ -69,11 +71,31 @@ const state = {
   stats: null,
   playingId: null,
   seed: null, // 「この曲みたいな曲」の基準にしている曲
-  mood: null, // 選んでいる気分のタイル（自分で書いた検索文なら null）
+  mood: null, // 選んでいる気分（一覧にない検索文や似た曲の検索なら null）
+  myMoods: loadMyMoods(), // [{ ja, query, colors }]
+  moodBeforeSeed: null, // 似た曲を探す前に選んでいた気分
   favorites: loadFavorites(), // [{ id, title, artist, artwork_url }]
 };
 
-// ---- favorites (このブラウザだけに保存) ----
+// ---- このブラウザだけに保存するもの ----
+
+function loadMyMoods() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(MY_MOODS_KEY) || "[]");
+    return Array.isArray(saved) ? saved.filter((mood) => mood?.query && Array.isArray(mood.colors)) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveMyMoods() {
+  try {
+    localStorage.setItem(MY_MOODS_KEY, JSON.stringify(state.myMoods));
+  } catch {
+    // 保存できなくても、このページを開いている間は使える
+  }
+}
+
 
 function loadFavorites() {
   try {
@@ -188,43 +210,86 @@ async function refreshStats() {
   elements.backfillNote.textContent = `${missing}曲がまだ雰囲気検索の対象になっていません（埋め込み未計算）。`;
 }
 
-// ---- mood (見出しと背景の色) ----
+// ---- mood (気分の一覧と、上の線の色) ----
 
-function paint([a, b, c]) {
+function paint([a, b]) {
   const root = document.documentElement.style;
   root.setProperty("--a", a);
   root.setProperty("--b", b);
-  root.setProperty("--c", c);
 }
 
-function setHeading(en, title, desc) {
-  elements.moodEn.textContent = en;
+function setHeading(title, desc) {
   elements.moodTitle.textContent = title;
-  // 自分で書いた長い検索文は、見出しを小さめにする
-  elements.moodTitle.classList.toggle("small", title.length > 10);
   elements.moodDesc.textContent = desc;
 }
 
 function chooseMood(mood) {
   state.mood = mood;
+  state.seed = null;
+  state.moodBeforeSeed = null;
+  elements.seed.hidden = true;
   elements.text.value = mood.query;
-  setHeading(mood.en, mood.ja, mood.desc);
+  setHeading(mood.ja, mood.desc ?? "あなたが書いた言葉に、雰囲気が近い順です。");
   paint(mood.colors);
   syncMoodButtons();
   runSearch();
 }
 
+function moodButton(mood) {
+  const button = el("button", { type: "button", className: "mood", "aria-pressed": "false", "data-query": mood.query, title: mood.query }, [
+    el("span", { className: "dot", "aria-hidden": "true" }),
+    el("span", { text: mood.ja }),
+  ]);
+  button.style.setProperty("--dot", mood.colors[0]);
+  button.addEventListener("click", () => chooseMood(mood));
+  return button;
+}
+
+function renderMoods() {
+  const items = MOODS.map((mood) => el("li", { className: "mood-item" }, moodButton(mood)));
+  if (state.myMoods.length) {
+    items.push(el("li", { className: "moods-divider", text: "あなたの気分" }));
+    for (const mood of state.myMoods) {
+      const remove = el("button", { type: "button", className: "mood-remove", text: "×", "aria-label": `「${mood.ja}」を一覧から消す` });
+      remove.addEventListener("click", () => removeMyMood(mood));
+      items.push(el("li", { className: "mood-item" }, [moodButton(mood), remove]));
+    }
+  }
+  elements.moods.replaceChildren(...items);
+  syncMoodButtons();
+}
+
 function syncMoodButtons() {
-  for (const button of elements.moods.children) {
-    button.setAttribute("aria-pressed", String(state.mood?.ja === button.textContent));
+  for (const button of elements.moods.querySelectorAll(".mood")) {
+    button.setAttribute("aria-pressed", String(state.mood?.query === button.dataset.query));
   }
 }
 
-// 気分のタイル以外で検索したときは、上位の曲の色で背景を塗る
-function paintFromTracks(tracks) {
-  if (!tracks.length) return;
-  const [a, b] = vibeColors(tracks[0]);
-  paint([a, vibeColors(tracks[Math.min(2, tracks.length - 1)])[1] ?? b, "#10141f"]);
+function findMood(query) {
+  return [...MOODS, ...state.myMoods].find((mood) => mood.query === query) ?? null;
+}
+
+// 一覧にない言葉で探したら、上位の曲の色をつけて「あなたの気分」に加える
+function addMyMood(query, tracks) {
+  const mood = { ja: query, query, colors: colorsFromTracks(tracks) };
+  state.myMoods = [mood, ...state.myMoods.filter((saved) => saved.query !== query)].slice(0, MAX_MY_MOODS);
+  saveMyMoods();
+  state.mood = mood;
+  renderMoods();
+  return mood;
+}
+
+function removeMyMood(mood) {
+  state.myMoods = state.myMoods.filter((saved) => saved.query !== mood.query);
+  saveMyMoods();
+  if (state.mood?.query === mood.query) state.mood = null;
+  renderMoods();
+}
+
+function colorsFromTracks(tracks) {
+  const [a] = vibeColors(tracks[0]);
+  const [, b] = vibeColors(tracks[Math.min(2, tracks.length - 1)]);
+  return [a, b];
 }
 
 // ジャケット画像の代わりに、曲の特徴から決まる色を返す（キー→色相、エネルギー→彩度、アコースティック→明るさ）
@@ -333,13 +398,21 @@ async function runSearch() {
 
 function describeSearch(query, interpreted, tracks) {
   if (state.seed) {
-    setHeading("Similar to", "この曲に似た曲", `「${state.seed.title}」（${state.seed.artist}）と雰囲気が近い順に並べています。`);
-  } else if (!state.mood && query.text) {
-    setHeading("Your words", `「${query.text}」`, interpreted ? `“${interpreted}” として探しました。` : "あなたの言葉に近い順に並べています。");
-  } else if (!state.mood) {
-    setHeading("Library", "ライブラリの曲", "気分を選ぶか、言葉で書くと、雰囲気の近い順に並びます。");
+    setHeading("この曲に似た曲", `「${state.seed.title}」（${state.seed.artist}）と雰囲気が近い順です。`);
+    if (tracks.length) paint(colorsFromTracks(tracks));
+    return;
   }
-  if (state.seed || !state.mood) paintFromTracks(tracks);
+  if (!query.text) {
+    state.mood = null;
+    syncMoodButtons();
+    setHeading("ライブラリの曲", "気分を選ぶか、言葉で書くと、雰囲気の近い順に並びます。");
+    return;
+  }
+  if (!state.mood && tracks.length) {
+    const mood = addMyMood(query.text, tracks);
+    paint(mood.colors);
+    setHeading(mood.ja, interpreted ? `“${interpreted}” として探しました。` : "あなたが書いた言葉に、雰囲気が近い順です。");
+  }
 }
 
 function renderResults(tracks, query, interpreted = null) {
@@ -369,7 +442,10 @@ function renderResults(tracks, query, interpreted = null) {
 
 function searchSimilarTo(track) {
   state.seed = { id: track.id, title: track.title, artist: track.artist };
+  // 似た曲は曲だけを基準に探し、やめたら元の気分に戻す
+  state.moodBeforeSeed = state.mood ?? state.moodBeforeSeed;
   state.mood = null;
+  elements.text.value = "";
   syncMoodButtons();
   elements.seedLabel.textContent = `「${track.title}」（${track.artist}）に雰囲気が近い曲`;
   elements.seed.hidden = false;
@@ -381,7 +457,10 @@ function searchSimilarTo(track) {
 function clearSeed() {
   state.seed = null;
   elements.seed.hidden = true;
-  runSearch();
+  const mood = state.moodBeforeSeed;
+  state.moodBeforeSeed = null;
+  if (mood) chooseMood(mood);
+  else runSearch();
 }
 
 function formatKey(features) {
@@ -401,7 +480,6 @@ function renderTrack(track, index = 0) {
     disabled: !playable,
   });
   play.innerHTML = ICON_PLAY;
-  play.style.setProperty("--dot", vibeColors(track)[0]);
   play.addEventListener("click", () => togglePlay(track));
 
   const tags = [
@@ -455,6 +533,7 @@ function renderTrack(track, index = 0) {
     ]),
   ]);
   item.style.setProperty("--i", String(index));
+  item.style.setProperty("--dot", vibeColors(track)[0]);
   return item;
 }
 
@@ -728,20 +807,18 @@ function init() {
     elements.key.append(el("option", { value: String(index), text: name }));
   }
 
-  for (const mood of MOODS) {
-    const tile = el("button", { type: "button", className: "mood", text: mood.ja, "aria-pressed": "false" });
-    tile.style.background = `linear-gradient(135deg, ${mood.colors[0]}, ${mood.colors[1]})`;
-    tile.addEventListener("click", () => chooseMood(mood));
-    elements.moods.append(tile);
-  }
+  renderMoods();
 
   elements.searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
-    // 自分で書き換えた検索文は、気分のタイルとは別の検索として扱う
-    if (state.mood && elements.text.value.trim() !== state.mood.query) {
-      state.mood = null;
-      syncMoodButtons();
+    // 一覧にある気分の検索文なら、その気分を選んだのと同じにする
+    const mood = findMood(elements.text.value.trim());
+    if (mood) {
+      chooseMood(mood);
+      return;
     }
+    state.mood = null;
+    syncMoodButtons();
     runSearch();
   });
   elements.searchForm.addEventListener("input", updateFilterCount);

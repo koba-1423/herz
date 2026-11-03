@@ -8,13 +8,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500&family=Zen+Kaku+Gothic+New:wght@400;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
     />
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
-    <div class="field" id="field" aria-hidden="true"></div>
+    <div class="line" aria-hidden="true"></div>
 
     <div class="page">
       <header class="masthead">
@@ -31,34 +31,31 @@
       <main>
         <section class="search" id="panel-search" role="tabpanel" aria-labelledby="tab-search">
           <div class="mood-column">
-            <p class="mood-en" id="mood-en">Rainy afternoon</p>
-            <h1 class="mood-title" id="mood-title">雨の午後</h1>
-            <p class="mood-desc" id="mood-desc">窓の外の雨音に溶けるような、静かなピアノとやわらかな弦。</p>
-
-            <div class="moods" id="moods" aria-label="気分から選ぶ"></div>
+            <h1 class="headline">気分の色で、<br />曲を選ぶ。</h1>
+            <ul class="moods" id="moods" aria-label="気分から選ぶ"></ul>
 
             <form id="search-form" class="search-form">
               <label for="text" class="visually-hidden">どんな雰囲気の曲？</label>
-              <div class="pill">
+              <div class="underline">
                 <input
                   id="text"
                   name="text"
                   type="search"
-                  placeholder="自分の言葉で気分を書く、または曲のURLを貼る"
+                  placeholder="自分の言葉で書く、または曲のURLを貼る"
                   autocomplete="off"
                   maxlength="1000"
                 />
-                <button type="submit" class="button solid">探す</button>
+                <button type="submit" class="text-button">探す</button>
               </div>
               <p class="hint" id="text-hint">
-                日本語でも英語でもOK。Apple Music・Spotify・YouTube の曲のURLを貼ると、その曲に似た曲を探します。
+                書いた言葉は、上の一覧に自分の気分として残ります（このブラウザだけに保存）。Apple Music・Spotify・YouTube の曲のURLを貼ると、その曲に似た曲を探します。
               </p>
               <div class="seed" id="seed" hidden>
                 <span id="seed-label"></span>
                 <button type="button" class="seed-clear" id="seed-clear" aria-label="この曲を基準にした検索をやめる">×</button>
               </div>
 
-              <details class="filters glass" id="filters">
+              <details class="filters" id="filters">
                 <summary>条件で絞り込む <span class="filter-count" id="filter-count"></span></summary>
                 <div class="filter-grid">
                   <fieldset class="range">
@@ -100,6 +97,10 @@
           </div>
 
           <div class="results-column">
+            <div class="now">
+              <h2 class="now-title" id="mood-title"></h2>
+              <p class="now-desc" id="mood-desc"></p>
+            </div>
             <div class="status" id="search-status" role="status" aria-live="polite"></div>
             <ol class="results" id="results"></ol>
           </div>
@@ -107,25 +108,24 @@
 
         <section class="taste" id="panel-taste" role="tabpanel" aria-labelledby="tab-taste" hidden>
           <div class="taste-intro">
-            <p class="mood-en">Your taste</p>
-            <h1 class="mood-title">あなたの好み</h1>
-            <p class="mood-desc">好きな曲を3曲以上選ぶと、音の傾向を言葉にして、別のアーティストの近い曲を探します。</p>
+            <h1 class="headline">あなたの<br />好みを知る。</h1>
+            <p class="lead">好きな曲を3曲以上選ぶと、音の傾向を言葉にして、別のアーティストの近い曲を探します。</p>
           </div>
 
           <div class="taste-grid">
-            <div class="glass card">
+            <div class="card">
               <form id="catalog-form">
                 <label for="catalog-term" class="card-title">好きな曲を追加</label>
-                <div class="pill">
+                <div class="underline">
                   <input id="catalog-term" type="search" placeholder="曲名・アーティスト名、または曲のURL" autocomplete="off" maxlength="1000" />
-                  <button type="submit" class="button solid">探す</button>
+                  <button type="submit" class="text-button">探す</button>
                 </div>
               </form>
               <div class="status" id="catalog-status" role="status" aria-live="polite"></div>
               <ul class="song-list" id="catalog"></ul>
             </div>
 
-            <div class="glass card">
+            <div class="card">
               <div class="favorites-head">
                 <h2 class="card-title">好きな曲 <span class="muted" id="favorites-summary"></span></h2>
                 <button type="button" class="button solid" id="analyze-button" disabled>好みを分析する</button>
@@ -137,12 +137,12 @@
           <div class="status" id="taste-status" role="status" aria-live="polite"></div>
           <div class="profile" id="profile" hidden>
             <div class="taste-grid">
-              <section class="glass card">
+              <section class="card">
                 <h2 class="card-title">あなたの好みを表す言葉</h2>
                 <ul class="words" id="profile-words"></ul>
                 <p class="note" id="profile-avoided"></p>
               </section>
-              <section class="glass card">
+              <section class="card">
                 <h2 class="card-title">音の傾向 <span class="muted">（ライブラリ全体の中での位置）</span></h2>
                 <ul class="insights" id="profile-features"></ul>
               </section>
@@ -154,7 +154,7 @@
       </main>
 
       <footer class="footer">
-        <details class="glass admin">
+        <details class="admin">
           <summary>ライブラリに曲を追加（管理用）</summary>
           <p class="note">
             iTunesでキーワード検索した曲の30秒プレビューを解析して、ライブラリに加えます。検索できるのは取り込んだ曲だけです。
