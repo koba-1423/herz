@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 13 Soft Wash</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="text-neutral-800 antialiased">
+    <div id="wash" class="fixed inset-0 -z-10"></div>
+    <main class="mx-auto max-w-3xl px-6 py-12 text-center">
+      <span class="text-lg font-bold">Herz</span>
+      <p id="en" class="mt-24 text-sm tracking-widest text-neutral-500 uppercase"></p>
+      <h1 id="title" class="mt-3 text-5xl font-bold md:text-6xl"></h1>
+      <div id="moods" class="mt-10 flex flex-wrap justify-center gap-2"></div>
+      <form id="form" class="mx-auto mt-8 flex max-w-lg gap-2 rounded-full bg-white p-1.5 pl-5 shadow-sm">
+        <input id="query" class="w-full outline-none" placeholder="自分の言葉で書く…" />
+        <button class="rounded-full bg-neutral-900 px-5 py-2 text-sm whitespace-nowrap text-white">探す</button>
+      </form>
+      <ul id="results" class="mt-14 grid gap-3 text-left sm:grid-cols-2"></ul>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

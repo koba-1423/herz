@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 14 Split</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="antialiased md:grid md:min-h-screen md:grid-cols-2">
+    <section id="panel" class="flex flex-col p-10 text-white transition-colors duration-700 md:min-h-screen">
+      <span class="text-lg font-bold">Herz</span>
+      <div class="my-auto py-16">
+        <p id="en" class="text-sm opacity-80"></p>
+        <h1 id="title" class="mt-2 text-6xl font-bold"></h1>
+        <div id="moods" class="mt-10 flex flex-wrap gap-2"></div>
+      </div>
+      <form id="form" class="flex gap-2 border-b border-white/60 pb-2">
+        <input id="query" class="w-full bg-transparent outline-none placeholder:text-white/60" placeholder="自分の言葉で書く…" />
+        <button class="text-sm font-bold whitespace-nowrap">探す →</button>
+      </form>
+    </section>
+    <section class="bg-white p-10">
+      <p class="text-xs tracking-widest text-neutral-400 uppercase">Results</p>
+      <ol id="results" class="mt-6 divide-y divide-neutral-100"></ol>
+    </section>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

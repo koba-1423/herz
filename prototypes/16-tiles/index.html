@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 16 Tiles</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-white text-neutral-900 antialiased">
+    <main class="mx-auto max-w-6xl px-8 py-8">
+      <header class="flex items-center justify-between gap-8">
+        <span class="font-semibold">Herz</span>
+        <form id="form" class="flex max-w-md flex-1 items-center gap-2 rounded-lg bg-neutral-100 px-4 py-2.5">
+          <input id="query" class="w-full bg-transparent text-sm outline-none" placeholder="気分を書いて探す" />
+        </form>
+      </header>
+      <div id="moods" class="mt-14 flex flex-wrap gap-6 text-sm text-neutral-400"></div>
+      <h1 id="title" class="mt-4 text-4xl font-bold"></h1>
+      <ul id="results" class="mt-10 grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 lg:grid-cols-5"></ul>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

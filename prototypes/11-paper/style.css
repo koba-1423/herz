@@ -1,0 +1,8 @@
+@import "tailwindcss";
+@import "@fontsource/zen-kaku-gothic-new/400.css";
+@import "@fontsource/shippori-mincho/500.css";
+
+@theme {
+  --font-sans: "Zen Kaku Gothic New", sans-serif;
+  --font-display: "Shippori Mincho", serif;
+}

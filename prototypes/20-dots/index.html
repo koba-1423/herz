@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 20 Dots</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-white text-neutral-900 antialiased">
+    <main class="mx-auto max-w-5xl px-8 py-10">
+      <header class="flex items-center justify-between text-sm">
+        <span class="text-lg font-bold">Herz</span>
+        <span class="text-neutral-400">色をえらぶと、曲が変わる</span>
+      </header>
+      <div id="moods" class="mt-24 flex flex-wrap justify-center gap-8"></div>
+      <h1 id="title" class="mt-12 text-center text-4xl font-bold"></h1>
+      <form id="form" class="mx-auto mt-8 flex max-w-md gap-2 border-b border-neutral-300 pb-2">
+        <input id="query" class="w-full outline-none placeholder:text-neutral-300" placeholder="または、自分の言葉で…" />
+        <button class="text-sm whitespace-nowrap text-neutral-500">探す</button>
+      </form>
+      <ul id="results" class="mx-auto mt-14 grid max-w-4xl gap-x-10 gap-y-5 md:grid-cols-2"></ul>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

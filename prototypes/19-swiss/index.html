@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 19 Swiss</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-[#f4f4f0] text-neutral-900 antialiased">
+    <main class="mx-auto grid max-w-6xl grid-cols-12 gap-6 px-8 py-10">
+      <header class="col-span-12 flex justify-between border-b-2 border-neutral-900 pb-3 text-sm font-bold">
+        <span>Herz</span><span class="text-[#e3342f]">Music by vibe</span>
+      </header>
+      <h1 class="col-span-12 mt-12 text-7xl leading-none font-bold tracking-tight md:col-span-7 md:text-8xl">雰囲気<br />で探す<span class="text-[#e3342f]">.</span></h1>
+      <div class="col-span-12 mt-12 self-end md:col-span-5">
+        <form id="form" class="flex border-2 border-neutral-900 bg-white">
+          <input id="query" class="w-full px-4 py-3 outline-none" placeholder="落ち着いたジャズ、サックス" />
+          <button class="bg-neutral-900 px-5 text-sm font-bold whitespace-nowrap text-white">探す</button>
+        </form>
+        <div id="presets" class="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-sm"></div>
+      </div>
+      <ol id="results" class="col-span-12 mt-12 grid gap-x-6 md:grid-cols-2"></ol>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

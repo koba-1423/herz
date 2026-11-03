@@ -1,0 +1,12 @@
+@import "tailwindcss";
+@import "@fontsource/zen-maru-gothic/500.css";
+@import "@fontsource/zen-maru-gothic/700.css";
+
+@theme {
+  --font-sans: "Zen Maru Gothic", sans-serif;
+}
+
+#wash {
+  background: radial-gradient(70% 60% at 50% 0%, var(--a, #c9d6e6), transparent), var(--c, #f5f7fa);
+  transition: background 0.8s ease;
+}

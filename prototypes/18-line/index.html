@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 18 Line</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-white text-neutral-900 antialiased">
+    <div id="line" class="h-1.5 transition-all duration-700"></div>
+    <main class="mx-auto max-w-5xl px-8 py-10">
+      <header class="text-sm font-bold">Herz</header>
+      <section class="mt-20 grid gap-12 md:grid-cols-[1fr_1.2fr]">
+        <div>
+          <h1 class="text-5xl leading-tight font-bold">気分の色で、<br />曲を選ぶ。</h1>
+          <ul id="moods" class="mt-10 space-y-1"></ul>
+          <form id="form" class="mt-8 flex gap-2 border-b-2 border-neutral-900 pb-2">
+            <input id="query" class="w-full outline-none placeholder:text-neutral-300" placeholder="自分の言葉で書く…" />
+            <button class="text-sm font-bold whitespace-nowrap">探す</button>
+          </form>
+        </div>
+        <ol id="results" class="divide-y divide-neutral-100"></ol>
+      </section>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

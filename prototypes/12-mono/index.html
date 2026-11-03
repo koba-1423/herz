@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 12 Mono</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-white text-black antialiased">
+    <main class="mx-auto max-w-4xl px-6 py-10">
+      <header class="flex justify-between font-mono text-xs">
+        <span>herz/</span>
+        <span id="count"></span>
+      </header>
+      <form id="form" class="mt-32 flex items-center gap-3 font-mono text-2xl md:text-3xl">
+        <span class="text-neutral-300">&gt;</span>
+        <input id="query" class="w-full outline-none placeholder:text-neutral-300" placeholder="雨の日に聴きたい静かなピアノ" />
+      </form>
+      <div id="presets" class="mt-6 flex flex-wrap gap-2 font-mono text-xs"></div>
+      <table class="mt-20 w-full font-mono text-sm">
+        <thead class="text-left text-xs text-neutral-400">
+          <tr><th class="w-10 py-2 font-normal">#</th><th class="font-normal">title</th><th class="font-normal">artist</th><th class="text-right font-normal">bpm</th><th class="w-20 text-right font-normal">match</th></tr>
+        </thead>
+        <tbody id="results"></tbody>
+      </table>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

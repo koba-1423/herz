@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 17 Night</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-neutral-950 text-neutral-100 antialiased">
+    <header class="mx-auto flex max-w-6xl items-center justify-between px-8 py-8 text-sm">
+      <span class="font-semibold">Herz</span>
+      <span id="count" class="text-neutral-500"></span>
+    </header>
+    <main class="mx-auto max-w-6xl px-8">
+      <section class="grid gap-16 pt-16 pb-20 md:grid-cols-[1.3fr_1fr]">
+        <h1 class="text-6xl leading-[1.15] font-bold tracking-tight md:text-7xl">夜に、<br />似合う音を。</h1>
+        <div class="flex flex-col justify-end">
+          <form id="form" class="flex items-end gap-4 border-b border-neutral-600 pb-3">
+            <input id="query" class="w-full bg-transparent text-xl outline-none placeholder:text-neutral-600" placeholder="夜のドライブ、シティポップ" />
+            <button class="text-sm font-semibold whitespace-nowrap">探す →</button>
+          </form>
+          <div id="presets" class="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm text-neutral-500"></div>
+        </div>
+      </section>
+      <ol id="results" class="grid gap-x-10 border-t border-neutral-800 pt-6 pb-16 md:grid-cols-2"></ol>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

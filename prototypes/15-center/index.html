@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Herz — 15 Center</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body class="bg-white text-neutral-900 antialiased">
+    <main class="mx-auto max-w-2xl px-6">
+      <section class="flex flex-col items-center pt-40 text-center">
+        <h1 class="text-5xl font-semibold tracking-tight">Herz</h1>
+        <p class="mt-3 text-neutral-500">聴きたい気分を、ひとことで。</p>
+        <form id="form" class="mt-10 flex w-full items-center gap-3 rounded-full border border-neutral-200 px-5 py-3 shadow-sm focus-within:shadow-md">
+          <svg viewBox="0 0 24 24" class="size-5 shrink-0 stroke-neutral-400" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+          <input id="query" class="w-full outline-none" placeholder="雨の日に聴きたい静かなピアノ" />
+        </form>
+        <div id="presets" class="mt-5 flex flex-wrap justify-center gap-2 text-sm"></div>
+      </section>
+      <ol id="results" class="mt-20 mb-16 space-y-1"></ol>
+    </main>
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
