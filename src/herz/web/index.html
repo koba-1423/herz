@@ -4,16 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Herz — 曲の雰囲気で探す</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"
-    />
     <link rel="stylesheet" href="/styles.css" />
     <script type="module" src="/app.js"></script>
   </head>
   <body>
+    <div class="backdrop" id="backdrop" aria-hidden="true">
+      <div class="backdrop-wash"></div>
+      <div class="backdrop-art" id="backdrop-art"></div>
+    </div>
     <div class="line" aria-hidden="true"></div>
 
     <div class="page">
@@ -32,23 +30,29 @@
         <section class="search" id="panel-search" role="tabpanel" aria-labelledby="tab-search">
           <div class="mood-column">
             <h1 class="headline">気分の色で、<br />曲を選ぶ。</h1>
-            <ul class="moods" id="moods" aria-label="気分から選ぶ"></ul>
+            <ul class="moods" id="moods" aria-label="探し方の一覧"></ul>
+            <button type="button" class="reset-searches" id="reset-searches">最初の一覧に戻す</button>
 
             <form id="search-form" class="search-form">
-              <label for="text" class="visually-hidden">どんな雰囲気の曲？</label>
+              <fieldset class="kind-switch">
+                <legend class="visually-hidden">何で探すか</legend>
+                <label><input type="radio" name="kind" value="vibe" checked /><span>雰囲気で</span></label>
+                <label><input type="radio" name="kind" value="song" /><span>曲名で</span></label>
+              </fieldset>
+              <label for="text" class="visually-hidden">検索する言葉</label>
               <div class="underline">
                 <input
                   id="text"
                   name="text"
                   type="search"
-                  placeholder="自分の言葉で書く、または曲のURLを貼る"
+                  placeholder="雰囲気を言葉で書く、または曲のURL"
                   autocomplete="off"
                   maxlength="1000"
                 />
                 <button type="submit" class="text-button">探す</button>
               </div>
               <p class="hint" id="text-hint">
-                書いた言葉は、上の一覧に自分の気分として残ります（このブラウザだけに保存）。Apple Music・Spotify・YouTube の曲のURLを貼ると、その曲に似た曲を探します。
+                探したものは上の一覧に加わります（このブラウザだけに保存）。一覧の名前は ✎ で変えられ、× で消せます。Apple Music・Spotify・YouTube の曲のURLを貼ると、その曲に似た曲を探します。
               </p>
               <div class="seed" id="seed" hidden>
                 <span id="seed-label"></span>
