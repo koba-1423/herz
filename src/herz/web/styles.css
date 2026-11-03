@@ -229,6 +229,22 @@ a {
   top: 36px;
 }
 
+/* 検索のページの見出しは、サービス名を大きく出す */
+.logo {
+  margin: 0;
+  font-size: clamp(72px, 10vw, 128px);
+  line-height: 0.95;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+
+.tagline {
+  margin: 14px 0 0;
+  font-size: 19px;
+  font-weight: 500;
+  opacity: 0.9;
+}
+
 .headline {
   margin: 0;
   font-size: clamp(36px, 4.6vw, 52px);
