@@ -172,11 +172,6 @@ a {
   gap: 32px;
 }
 
-.brand {
-  font-weight: 700;
-  text-decoration: none;
-}
-
 .tabs {
   display: flex;
   gap: 20px;
