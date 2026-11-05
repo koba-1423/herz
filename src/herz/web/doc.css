@@ -1,0 +1,126 @@
+/* プライバシーポリシーや Herz について など、読み物のページ。検索画面と同じ地の色と文字 */
+
+:root {
+  --bg: #f5f5f7;
+  --text: #1d1d1f;
+  --muted: #6e6e73;
+  --line: #d2d2d7;
+  --link: #0066cc;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", "Hiragino Sans",
+    "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", Meiryo, sans-serif;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--bg);
+}
+
+body {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.8;
+  letter-spacing: 0.01em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 検索画面の上の線と同じく、気分の色を細く引く */
+body::before {
+  content: "";
+  display: block;
+  height: 6px;
+  background: linear-gradient(90deg, #5b7ea4, #9b3fd1, #ff4f8b, #e8402f);
+}
+
+.doc {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.doc .doc-home {
+  color: var(--text);
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+}
+
+.doc h1 {
+  margin: 48px 0 8px;
+  font-size: clamp(32px, 6vw, 48px);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.doc h2 {
+  margin: 48px 0 8px;
+  font-size: 21px;
+}
+
+.doc h3 {
+  margin: 28px 0 4px;
+  font-size: 17px;
+}
+
+.doc p,
+.doc li {
+  font-size: 16px;
+}
+
+.doc a {
+  color: var(--link);
+}
+
+.doc .meta {
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.doc table {
+  width: 100%;
+  margin: 12px 0;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.doc th,
+.doc td {
+  padding: 10px 12px 10px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.doc th {
+  width: 9em;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.doc-footer {
+  margin-top: 64px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.doc-footer a {
+  margin-right: 16px;
+  color: inherit;
+}
+
+@media (max-width: 600px) {
+  .doc {
+    padding: 28px 16px 64px;
+  }
+
+  .doc th {
+    width: 6.5em;
+  }
+}
