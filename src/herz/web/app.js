@@ -48,6 +48,7 @@ const elements = {
   resetFilters: $("#reset-filters"),
   searchStatus: $("#search-status"),
   results: $("#results"),
+  admin: $("#admin"),
   ingestForm: $("#ingest-form"),
   ingestStatus: $("#ingest-status"),
   backfill: $("#backfill"),
@@ -198,7 +199,8 @@ async function refreshStats() {
     return;
   }
 
-  const { total_tracks, embedded_tracks, text_search_available } = state.stats;
+  const { total_tracks, embedded_tracks, text_search_available, admin_enabled } = state.stats;
+  elements.admin.hidden = !admin_enabled;
   elements.stats.textContent = text_search_available
     ? `${embedded_tracks.toLocaleString()}曲から探せます`
     : `ライブラリ ${total_tracks.toLocaleString()}曲`;

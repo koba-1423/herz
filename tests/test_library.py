@@ -14,6 +14,7 @@ async def test_stats_without_embedder(client: httpx.AsyncClient) -> None:
         "embedded_tracks": 0,
         "text_search_available": False,
         "embedding_model": None,
+        "admin_enabled": True,
     }
 
 

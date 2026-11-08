@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from herz.api.routes import analyze, catalog, health, ingest, library, search, taste
-from herz.core.config import get_settings
+from herz.core.config import Settings, get_settings
 from herz.core.dependencies import get_audio_text_embedder, get_query_translator
 from herz.services.embeddings import ClapEmbedder
 from herz.services.query_translation import NllbTranslator
@@ -48,13 +48,15 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await engine.dispose()
 
 
-def create_app() -> FastAPI:
+def create_app(settings: Settings | None = None) -> FastAPI:
+    settings = settings or get_settings()
     app = FastAPI(title="Herz", lifespan=lifespan)
     app.state.embedding_indexes = {}
     app.include_router(health.router)
     app.include_router(search.router)
-    app.include_router(analyze.router)
-    app.include_router(ingest.router)
+    if settings.admin_enabled:
+        app.include_router(analyze.router)
+        app.include_router(ingest.router)
     app.include_router(library.router)
     app.include_router(catalog.router)
     app.include_router(taste.router)

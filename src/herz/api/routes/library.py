@@ -2,7 +2,7 @@ import httpx
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import func, select
 
-from herz.core.dependencies import AudioTextEmbedderDep, SessionDep, TrackIngestorDep
+from herz.core.dependencies import AudioTextEmbedderDep, SessionDep, SettingsDep, TrackIngestorDep
 from herz.models.track import TrackRecord
 from herz.schemas.catalog import AddTrackRequest
 from herz.schemas.library import LibraryStats
@@ -12,7 +12,9 @@ router = APIRouter(prefix="/library", tags=["library"])
 
 
 @router.get("/stats", response_model=LibraryStats)
-async def library_stats(session: SessionDep, embedder: AudioTextEmbedderDep) -> LibraryStats:
+async def library_stats(
+    session: SessionDep, embedder: AudioTextEmbedderDep, settings: SettingsDep
+) -> LibraryStats:
     """取り込み済みの楽曲数と、自然文検索の対象になっている楽曲数を返す。"""
     total = await session.scalar(select(func.count()).select_from(TrackRecord))
     embedded = (
@@ -25,6 +27,7 @@ async def library_stats(session: SessionDep, embedder: AudioTextEmbedderDep) -> 
         embedded_tracks=embedded or 0,
         text_search_available=embedder is not None,
         embedding_model=embedder.model_name if embedder is not None else None,
+        admin_enabled=settings.admin_enabled,
     )
 
 
