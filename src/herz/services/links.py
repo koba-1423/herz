@@ -4,14 +4,11 @@
 だけを読みに行く（任意のURLを取得させると、サーバー経由で内部ネットワーク等を覗かれうるため）。
 """
 
-import html
 import re
 from dataclasses import dataclass
 from urllib.parse import parse_qs, urlparse
 
 import httpx
-
-_BROWSER_HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
 
 _APPLE_HOSTS = {"music.apple.com", "itunes.apple.com", "geo.music.apple.com"}
 _SPOTIFY_HOSTS = {"open.spotify.com"}
@@ -70,26 +67,15 @@ async def _spotify(path: str, http: httpx.AsyncClient) -> LinkLookup:
     match = _SPOTIFY_TRACK.search(path)
     if match is None:
         raise UnsupportedLinkError("Spotify は曲（/track/...）のURLに対応しています")
-    # 公開ページの <meta> に曲名とアーティスト名が入っている（APIはアプリ登録が必要なため使わない）
+    # 公式の埋め込み用API（oEmbed）。アプリ登録なしで使えるが、分かるのは曲名だけでアーティスト名は返らない
     response = await http.get(
-        f"https://open.spotify.com/track/{match.group(1)}", headers=_BROWSER_HEADERS, follow_redirects=True
+        "https://open.spotify.com/oembed", params={"url": f"https://open.spotify.com/track/{match.group(1)}"}
     )
     response.raise_for_status()
-    title = _meta(response.text, "og:title")
-    artist = _meta(response.text, "music:musician_description")
-    if title is None:
+    title = response.json().get("title", "").strip()
+    if not title:
         raise UnsupportedLinkError("Spotify の曲情報を読み取れませんでした")
-    artist = (artist or "").split(",")[0].strip() or None
-    return LinkLookup(
-        service="spotify",
-        detected=" / ".join(filter(None, [title, artist])),
-        search_terms=tuple(dict.fromkeys(filter(None, [f"{title} {artist}" if artist else None, title]))),
-    )
-
-
-def _meta(page: str, name: str) -> str | None:
-    match = re.search(rf'<meta[^>]+(?:property|name)="{re.escape(name)}"[^>]+content="([^"]*)"', page)
-    return html.unescape(match.group(1)) if match else None
+    return LinkLookup(service="spotify", detected=title, search_terms=(title,))
 
 
 async def _youtube(host: str, path: str, query: dict[str, list[str]], http: httpx.AsyncClient) -> LinkLookup:

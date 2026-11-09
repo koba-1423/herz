@@ -3,16 +3,13 @@ import pytest
 
 from herz.services.links import UnsupportedLinkError, rank_by_title, resolve_link, youtube_search_terms
 
-SPOTIFY_PAGE = """<html><head>
-<meta property="og:title" content="Never Gonna Give You Up"/>
-<meta name="music:musician_description" content="Rick Astley"/>
-</head></html>"""
-
 
 def _handler(request: httpx.Request) -> httpx.Response:
     if request.url.host == "open.spotify.com":
-        assert request.url.path == "/track/4cOdK2wGLETKBW3PvgPWqT"  # 貼られたURLではなくIDから組み立てる
-        return httpx.Response(200, text=SPOTIFY_PAGE)
+        assert request.url.path == "/oembed"
+        # 貼られたURLではなくIDから組み立てる
+        assert request.url.params["url"] == "https://open.spotify.com/track/4cOdK2wGLETKBW3PvgPWqT"
+        return httpx.Response(200, json={"title": "Never Gonna Give You Up"})
     if request.url.path == "/oembed":
         assert request.url.params["url"] == "https://www.youtube.com/watch?v=x8VYWazR5mE"
         return httpx.Response(
@@ -38,10 +35,10 @@ async def test_apple_music_urls_carry_itunes_ids() -> None:
     assert (album.album_id, album.track_id) == ("1530947020", None)
 
 
-async def test_spotify_track_is_read_from_its_public_page() -> None:
+async def test_spotify_track_title_comes_from_oembed() -> None:
     lookup = await _resolve("https://open.spotify.com/intl-ja/track/4cOdK2wGLETKBW3PvgPWqT?si=x")
-    assert lookup.detected == "Never Gonna Give You Up / Rick Astley"
-    assert lookup.search_terms[0] == "Never Gonna Give You Up Rick Astley"
+    assert lookup.detected == "Never Gonna Give You Up"
+    assert lookup.search_terms == ("Never Gonna Give You Up",)
 
 
 async def test_youtube_video_title_becomes_search_terms() -> None:
