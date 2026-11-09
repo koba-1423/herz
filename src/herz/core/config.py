@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     # 誰でも重い処理を走らせられてしまうので、公開するサーバーでは false にする
     admin_enabled: bool = True
 
+    # 同じIPアドレスから1分間にできる検索の回数（0で制限なし）。曲の取り込みは別に数える
+    rate_limit_per_minute: int = 0
+    rate_limit_heavy_per_minute: int = 10
+    # Cloudflare の後ろで動かすときだけ true にし、CF-Connecting-IP ヘッダーのIPアドレスで数える
+    trust_proxy_headers: bool = False
+
     # 自然文検索用のCLAPモデル。空文字にすると埋め込みの算出・自然文検索を無効化する
     clap_model: str = "laion/larger_clap_general"
     # 日本語の検索文のうち、音楽の言葉の辞書で拾えなかったものを英訳する機械翻訳モデル（空文字で無効）

@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from herz.api.routes import analyze, catalog, health, ingest, library, search, taste
 from herz.core.config import Settings, get_settings
 from herz.core.dependencies import get_audio_text_embedder, get_query_translator
+from herz.core.rate_limit import RateLimiter
 from herz.services.embeddings import ClapEmbedder
 from herz.services.query_translation import NllbTranslator
 
@@ -52,6 +53,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     settings = settings or get_settings()
     app = FastAPI(title="Herz", lifespan=lifespan)
     app.state.embedding_indexes = {}
+    if settings.rate_limit_per_minute > 0:
+        limiter = RateLimiter(
+            settings.rate_limit_per_minute, settings.rate_limit_heavy_per_minute, settings.trust_proxy_headers
+        )
+        app.middleware("http")(limiter)
     app.include_router(health.router)
     app.include_router(search.router)
     if settings.admin_enabled:
